@@ -5,19 +5,38 @@ import vlc
 import datetime
 from pygame import mixer
 import random
-from import_system import append_folder_to_songs_path, get_playlists, is_valid_playlist_name, \
-    delete_playlist_from_songs_path, delete_song_from_playlist, add_song_to_playlist, \
-    create_virtual_playlist_in_songs_path
-import songs_path
-import json
 
-if os.name == "nt":
-    import msvcrt
-    os.system("")
-else:
+try:
     import select
+    HAS_SELECT = True
+except ImportError:
+    select = None
+    HAS_SELECT = False
+
+try:
     import termios
     import tty
+    HAS_TERMIOS = True
+except ImportError:
+    termios = None
+    tty = None
+    HAS_TERMIOS = False
+
+try:
+    import msvcrt
+    HAS_MSVCRT = True
+except ImportError:
+    msvcrt = None
+    HAS_MSVCRT = False
+
+IS_WINDOWS = (os.name == "nt" or sys.platform == "win32") and HAS_MSVCRT
+
+from import_system import append_folder_to_songs_path, get_playlists, is_valid_playlist_name, \
+    delete_playlist_from_songs_path, delete_song_from_playlist, add_song_to_playlist, \
+    create_virtual_playlist_in_songs_path, is_folder_playlist
+
+import songs_path
+import json
 
 class UiWidgets:
 
@@ -78,41 +97,158 @@ class UiWidgets:
         self.current_ms = None
         self.name_of_playlist = name_of_playlist
         self.current_index = current_index
+        self._pending_keys = []
+
+    @staticmethod
+    def _parse_escape_sequence(seq):
+        if not seq or seq[0] != '\x1b':
+            return None
+        if len(seq) == 1:
+            return None
+        rest = seq[1:]
+        if rest.startswith('[') or rest.startswith('O'):
+            last = rest[-1]
+            if last == 'A':
+                return 'UP'
+            if last == 'B':
+                return 'DOWN'
+            if last == 'C':
+                return 'RIGHT'
+            if last == 'D':
+                return 'LEFT'
+        return None
 
     def check_key_presses(self):
-        if os.name == "nt":
-            if msvcrt.kbhit():
-                key = msvcrt.getwch()
-                if key in ('\x00', '\xe0'):
-                    additional = msvcrt.getwch()
-                    if additional == 'M':
-                        return 'RIGHT'
-                    elif additional == 'K':
-                        return 'LEFT'
-                    return None
-                if key == '\x03':
-                    raise KeyboardInterrupt
-                return key
+        if self._pending_keys:
+            return self._pending_keys.pop(0)
+        if IS_WINDOWS:
+            return self._check_key_windows()
+        return self._check_key_unix()
+
+    def _check_key_windows(self):
+        try:
+            if not msvcrt.kbhit():
+                return None
+            ch = msvcrt.getwch()
+        except (AttributeError, ValueError, OSError, IOError):
+            return None
+        if ch in ('\x00', '\xe0'):
+            try:
+                ch2 = msvcrt.getwch()
+            except (AttributeError, ValueError, OSError, IOError):
+                return None
+            return {'H': 'UP', 'P': 'DOWN', 'K': 'LEFT', 'M': 'RIGHT'}.get(ch2, None)
+        if ch == '\r':
+            return '\n'
+        return ch
+
+    def _check_key_unix(self):
+        if not HAS_TERMIOS or not HAS_SELECT:
+            return None
+        try:
+            fd = sys.stdin.fileno()
+        except (AttributeError, ValueError, OSError, IOError):
+            return None
+        try:
+            ready, _, _ = select.select([sys.stdin], [], [], 0)
+        except (ValueError, OSError):
+            return None
+        if not ready:
+            return None
+        try:
+            data = os.read(fd, 16)
+        except OSError:
+            return None
+        if not data:
+            return None
+        try:
+            text = data.decode('utf-8', errors='ignore')
+        except (UnicodeDecodeError, ValueError):
+            return None
+        if not text:
             return None
 
-        if select.select([sys.stdin], [], [], 0)[0]:
-            key = os.read(sys.stdin.fileno(), 1).decode("utf-8", errors="ignore")
-            if key == '\x1b':
-                if select.select([sys.stdin], [], [], 0.05)[0]:
-                    additional = os.read(sys.stdin.fileno(), 2).decode("utf-8", errors="ignore")
-                    if additional == '[C':
-                        return 'RIGHT'
-                    elif additional == '[D':
-                        return 'LEFT'
-                return key
-            return None
+        chars = []
+        for c in text:
+            chars.append('\n' if c == '\r' else c)
+
+        first = chars[0]
+        rest_chars = chars[1:]
+
+        if first == '\x1b':
+            seq = first + ''.join(rest_chars)
+            if len(seq) == 1:
+                try:
+                    more_ready, _, _ = select.select([sys.stdin], [], [], 0.05)
+                except (ValueError, OSError):
+                    more_ready = []
+                if more_ready:
+                    try:
+                        extra = os.read(fd, 15)
+                    except OSError:
+                        extra = b''
+                    if extra:
+                        try:
+                            seq += extra.decode('utf-8', errors='ignore').replace('\r', '\n')
+                        except (UnicodeDecodeError, ValueError):
+                            pass
+            parsed = self._parse_escape_sequence(seq)
+            if parsed:
+                return parsed
+            if len(seq) == 1:
+                return '\x1b'
+            tail = seq[1:]
+            for c in tail:
+                if c not in ('[', 'O', ';') and not c.isdigit():
+                    self._pending_keys.append(c)
+            return self._pending_keys.pop(0) if self._pending_keys else None
+
+        for c in rest_chars:
+            self._pending_keys.append(c)
+        return first
+
+    def _stdin_fd(self):
+        try:
+            if sys.stdin.isatty():
+                return sys.stdin.fileno()
+        except (AttributeError, ValueError, OSError, IOError):
+            pass
+        return None
+
+    def _setup_cbreak(self):
+        self.old_settings = None
+        self._pending_keys = []
+        if IS_WINDOWS or not HAS_TERMIOS:
+            return False
+        fd = self._stdin_fd()
+        if fd is None:
+            return False
+        try:
+            self.old_settings = termios.tcgetattr(fd)
+            tty.setcbreak(fd)
+            termios.tcflush(fd, termios.TCIFLUSH)
+            return True
+        except (termios.error, ValueError, OSError):
+            self.old_settings = None
+            return False
+
+    def _restore_input(self):
+        if IS_WINDOWS or not HAS_TERMIOS:
+            return
+        if self.old_settings is None:
+            return
+        fd = self._stdin_fd()
+        target = fd if fd is not None else sys.stdin
+        try:
+            termios.tcsetattr(target, termios.TCSANOW, self.old_settings)
+        except (termios.error, ValueError, OSError):
+            pass
+        finally:
+            self.old_settings = None
 
     def loop_for_song(self, player, song_time, playlist):
 
-        if os.name != "nt":
-            self.old_settings = termios.tcgetattr(sys.stdin)
-            tty.setcbreak(sys.stdin.fileno())
-        self.flush_key_buffer()
+        self._setup_cbreak()
         print("\033[?25l", end="")
 
         try:
@@ -127,19 +263,19 @@ class UiWidgets:
                         self.click_sound.play()
                         player.pause()
 
-                    elif key in ('d', "l"):
+                    elif key in ('d', "l", "RIGHT"):
                         self.click_sound.play()
                         new_ms = min(player.get_time() + 10000, int(song_time * 1000))
                         player.set_time(new_ms)
                         self.sync_timeline(song_time, new_ms)
 
-                    elif key in ('a', "j"):
+                    elif key in ('a', "j", "LEFT"):
                         self.click_sound.play()
                         new_ms = max(player.get_time() - 10000, 0)
                         player.set_time(new_ms)
                         self.sync_timeline(song_time, new_ms)
 
-                    elif key == "p":
+                    elif key in ("p", "UP"):
                         if self.volume_level < 10:
                             self.click_sound.play()
                             self.volume_level += 1
@@ -147,7 +283,7 @@ class UiWidgets:
                             player.audio_set_volume(self.volume_level * 10)
                             self.save_data_to_last_play()
 
-                    elif key == "o":
+                    elif key in ("o", "DOWN"):
                         if self.volume_level > 0:
                             self.click_sound.play()
                             self.volume_level -= 1
@@ -301,8 +437,7 @@ class UiWidgets:
                         player, song_time, self.current_index = self.next_song(player, playlist, self.current_index, self.shuffle)
                         self.save_data_to_last_play()
         finally:
-            if os.name != "nt":
-                termios.tcsetattr(sys.stdin, termios.TCSANOW, self.old_settings)
+            self._restore_input()
             print("\033[?25h\n")
 
     def sync_timeline(self, song_time, current_ms):
@@ -364,7 +499,7 @@ class UiWidgets:
 
         if self.help_menu_toggle == True:
             try:
-                with open("help_keybinds.txt", "r", encoding="utf-8") as help_data:
+                with open("help_keybinds.txt", "r") as help_data:
                     print(help_data.read())
             except FileNotFoundError:
                 print("help_keybinds.txt not found.")
@@ -409,24 +544,41 @@ class UiWidgets:
         self.line_list = ["-"] * 25
         self.play_pause = "⏸"
 
-    def flush_key_buffer(self):
-        if os.name == "nt":
-            while msvcrt.kbhit():
-                msvcrt.getwch()
-        else:
-            termios.tcflush(sys.stdin, termios.TCIFLUSH)
-
     def disable_cbreak(self, old_settings):
-        self.flush_key_buffer()
-        if os.name != "nt":
-            termios.tcsetattr(sys.stdin, termios.TCSANOW, old_settings)
+        if IS_WINDOWS or not HAS_TERMIOS:
+            print("\033[?25h", end="", flush=True)
+            return
+        fd = self._stdin_fd()
+        target = fd if fd is not None else sys.stdin
+        try:
+            termios.tcflush(target, termios.TCIFLUSH)
+        except (termios.error, ValueError, OSError):
+            pass
+        if old_settings is not None:
+            try:
+                termios.tcsetattr(target, termios.TCSANOW, old_settings)
+            except (termios.error, ValueError, OSError):
+                pass
         print("\033[?25h", end="", flush=True)
 
     def enable_cbreak(self):
-        if os.name != "nt":
-            tty.setcbreak(sys.stdin.fileno())
+        if IS_WINDOWS or not HAS_TERMIOS:
+            self._pending_keys = []
+            print("\033[?25l", end="", flush=True)
+            return
+        fd = self._stdin_fd()
+        if fd is None:
+            return
+        try:
+            tty.setcbreak(fd)
+        except (termios.error, ValueError, OSError):
+            return
         print("\033[?25l", end="", flush=True)
-        self.flush_key_buffer()
+        try:
+            termios.tcflush(fd, termios.TCIFLUSH)
+        except (termios.error, ValueError, OSError):
+            pass
+        self._pending_keys = []
 
     def select_playlist(self, player, playlist, song_time, current_index):
         self.disable_cbreak(self.old_settings)
@@ -476,7 +628,7 @@ class UiWidgets:
         current_song_index = 0
         current_song = new_playlist[current_song_index]
 
-        new_song_name = os.path.basename(current_song)
+        new_song_name = current_song.split("/")[-1]
         new_player = vlc.MediaPlayer(current_song)
 
         new_player.audio_set_volume(self.volume_level * 10)
@@ -501,7 +653,7 @@ class UiWidgets:
         select_index = current_index
         temp_select_list = []
         for song in playlist:
-            temp_select_list.append(os.path.basename(song))
+            temp_select_list.append(song.split("/")[-1])
 
         while True:
             self.hard_clear_screen()
@@ -539,7 +691,7 @@ class UiWidgets:
                 self.click_sound.play()
                 break
 
-            if key == 'm':
+            if key == 'm' or key == 'DOWN':
                 self.click_sound.play()
                 if select_index < len(temp_select_list) - 1:
                     select_index += 1
@@ -547,7 +699,7 @@ class UiWidgets:
                         start += 1
                         end += 1
 
-            if key == 'n':
+            if key == 'n' or key == 'UP':
                 self.click_sound.play()
                 if select_index > 0:
                     select_index -= 1
@@ -555,7 +707,7 @@ class UiWidgets:
                         start -= 1
                         end -= 1
 
-            if key and len(key) == 1 and ord(key) in (10, 13):
+            if key in ('\n', '\r') or (key and len(key) == 1 and ord(key) in (10, 13)):
                 self.hard_clear_screen()
                 player, song_time, select_index = self.song_player(player, select_index, playlist)
                 return player, song_time, playlist, select_index
@@ -571,7 +723,7 @@ class UiWidgets:
 
         temp_select_list = []
         for song in song_paths:
-            temp_select_list.append(os.path.basename(song))
+            temp_select_list.append(song.split("/")[-1])
 
         chosen_list = []
 
@@ -611,17 +763,17 @@ class UiWidgets:
                 self.click_sound.play()
                 return None
 
-            if key == 'm':
+            if key == 'm' or key == 'DOWN':
                 self.click_sound.play()
                 if select_index < len(temp_select_list) - 1:
                     select_index += 1
 
-            if key == 'n':
+            if key == 'n' or key == 'UP':
                 self.click_sound.play()
                 if select_index > 0:
                     select_index -= 1
 
-            if key and len(key) == 1 and ord(key) in (10, 13):
+            if key in ('\n', '\r') or (key and len(key) == 1 and ord(key) in (10, 13)):
                 self.click_sound.play()
                 if multi:
                     if select_index in chosen_list:
@@ -719,7 +871,7 @@ class UiWidgets:
         new_playlist = getattr(songs_path, name_of_playlist)
         current_song = new_playlist[0]
 
-        new_song_name = os.path.basename(current_song)
+        new_song_name = current_song.split("/")[-1]
         new_player = vlc.MediaPlayer(current_song)
 
         new_player.audio_set_volume(self.volume_level * 10)
@@ -808,6 +960,13 @@ class UiWidgets:
         return player, song_time, playlist, current_index
 
     def delete_song_prompt(self, player, playlist, song_time, current_index):
+        if is_folder_playlist(self.name_of_playlist):
+            print("This playlist stays in sync with its folder, so songs can't be removed here.")
+            print("Only virtual playlists can be edited.")
+            time.sleep(2)
+            self.hard_clear_screen()
+            return player, song_time, playlist, current_index
+
         chosen_list = self.select_song_list(playlist, False, f"DELETE A SONG FROM '{self.name_of_playlist}'", current_index)
 
         if chosen_list is None:
@@ -815,7 +974,7 @@ class UiWidgets:
             return player, song_time, playlist, current_index
 
         delete_index = chosen_list[0]
-        song_name = os.path.basename(playlist[delete_index])
+        song_name = playlist[delete_index].split("/")[-1]
 
         self.disable_cbreak(self.old_settings)
         self.hard_clear_screen()
@@ -854,6 +1013,13 @@ class UiWidgets:
         return player, song_time, new_playlist, current_index
 
     def import_single_song_prompt(self, playlist):
+        if is_folder_playlist(self.name_of_playlist):
+            print("This playlist stays in sync with its folder, so songs can't be added here.")
+            print("Only virtual playlists can be edited.")
+            time.sleep(2)
+            self.hard_clear_screen()
+            return playlist
+
         self.disable_cbreak(self.old_settings)
         self.hard_clear_screen()
         print("+==================================+")
@@ -933,7 +1099,9 @@ class UiWidgets:
             index = 0
         song_path = playlist[index]
 
-        song_name = os.path.basename(song_path)
+        path_parts = song_path.split('/')
+        file_name_with_extension = path_parts[-1]
+        song_name = file_name_with_extension
 
         new_player = vlc.MediaPlayer(song_path)
         new_player.audio_set_volume(self.volume_level * 10)

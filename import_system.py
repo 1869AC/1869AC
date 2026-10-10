@@ -1,6 +1,5 @@
 from pathlib import Path
 import importlib
-import os
 import keyword
 import re
 import songs_path
@@ -24,6 +23,13 @@ def get_playlists():
 def is_valid_playlist_name(playlist_name):
     return playlist_name.isidentifier() and not keyword.iskeyword(playlist_name) and not playlist_name.startswith("__")
 
+def is_folder_playlist(playlist_name):
+    with open("songs_path.py", "r", encoding="utf-8") as f:
+        content = f.read()
+
+    pattern = rf"^# Auto-imported playlist from: [^\n]*\n{re.escape(playlist_name)} = \["
+    return re.search(pattern, content, re.M) is not None
+
 def append_folder_to_songs_path(folder_path, playlist_name):
 
     playlists_list = []
@@ -43,7 +49,7 @@ def append_folder_to_songs_path(folder_path, playlist_name):
         return False
 
     else:
-        path = Path(folder_path.strip().strip("'\"")).expanduser().resolve()
+        path = Path(folder_path).expanduser().resolve()
         if not path.is_dir():
             print(f"Error: Directory '{folder_path}' not found.")
             return False
@@ -71,8 +77,6 @@ def save_playlist_to_songs_path(playlist_name, songs):
     match = pattern.search(content)
 
     comment_line = match.group(1) or ""
-    if comment_line.startswith("# Auto-imported"):
-        comment_line = "# Edited playlist (folder sync off)\n"
 
     block = comment_line + f"{playlist_name} = [\n" + "".join(f"    {repr(s)},\n" for s in songs) + "]"
     content = pattern.sub(lambda m: block, content, count=1)
@@ -104,6 +108,10 @@ def delete_playlist_from_songs_path(playlist_name):
 
 def delete_song_from_playlist(playlist_name, song_index):
 
+    if is_folder_playlist(playlist_name):
+        print("Folder playlists stay in sync with their folder. Only virtual playlists can be edited.")
+        return False
+
     songs = list(getattr(songs_path, playlist_name, []))
 
     if song_index < 0 or song_index >= len(songs):
@@ -116,16 +124,17 @@ def delete_song_from_playlist(playlist_name, song_index):
 
     removed_song = songs.pop(song_index)
     save_playlist_to_songs_path(playlist_name, songs)
-    print(f"Removed '{Path(removed_song).name}' from '{playlist_name}'.")
+    print(f"Removed '{removed_song.split('/')[-1]}' from '{playlist_name}'.")
     return True
 
 def add_song_to_playlist(playlist_name, song_path):
 
+    if is_folder_playlist(playlist_name):
+        print("Folder playlists stay in sync with their folder. Only virtual playlists can be edited.")
+        return False
+
     songs = list(getattr(songs_path, playlist_name, []))
-    song_path = song_path.strip().strip("'\"")
-    if os.name != "nt":
-        song_path = song_path.replace("\\ ", " ")
-    path = Path(song_path).expanduser().resolve()
+    path = Path(song_path.strip().strip("'\"").replace("\\ ", " ")).expanduser().resolve()
 
     if not path.is_file():
         print(f"Error: File '{song_path}' not found.")

@@ -2,10 +2,10 @@ import json
 import os
 import sys
 
-stderr_fd = sys.stderr.fileno()
-devnull = os.open(os.devnull, os.O_WRONLY)
-os.dup2(devnull, stderr_fd)
-os.close(devnull)
+# stderr_fd = sys.stderr.fileno()
+# devnull = os.open(os.devnull, os.O_WRONLY)
+# os.dup2(devnull, stderr_fd)
+# os.close(devnull)
 
 import time
 try:
@@ -26,7 +26,6 @@ def sync_playlists_with_folders():
     with open("songs_path.py", "r", encoding="utf-8") as f:
         content: str = f.read()
 
-    # finds every "# Auto-imported playlist from: <folder>" + the playlist name under it
     sources = re.findall(r"# Auto-imported playlist from: (.+)\n(\w+) = \[", content)
     if not sources:
         print("Sync: no imported playlists to check.")
@@ -56,7 +55,6 @@ def sync_playlists_with_folders():
             print(f"[{name}] up to date ({len(old)} songs)")
             continue
 
-        # keep existing order, drop deleted songs, append new ones
         updated = [s for s in old if s in new_set] + added
         block = f"{name} = [\n" + "".join(f"    {repr(s)},\n" for s in updated) + "]"
 
@@ -73,14 +71,14 @@ def sync_playlists_with_folders():
     if changed:
         with open("songs_path.py", "w", encoding="utf-8") as f:
             f.write(content)
-        importlib.reload(songs_path)  # so the playlist menu sees the new data
+        importlib.reload(songs_path)
 
         time.sleep(2)
 
 
 sync_playlists_with_folders()
 
-with open("songs_path.py", "r", encoding="utf-8") as song:
+with open("songs_path.py", "r") as song:
     if not song.read().strip():
         while True:
             print("\033[H\033[2J", end="", flush=True)
@@ -140,7 +138,7 @@ while True:
             playlist = getattr(songs_path, name_for_Playlist)
             current_song_index = user_saves["index_of_song"]
             current_song = playlist[current_song_index]
-            current_song_name = os.path.basename(current_song)
+            current_song_name = current_song.split("/")[-1]
 
             player = vlc.MediaPlayer(current_song)
             player.play()
@@ -174,7 +172,7 @@ while True:
 
             current_song_index = 0
             current_song = playlist[current_song_index]
-            current_song_name = os.path.basename(current_song)
+            current_song_name = current_song.split("/")[-1]
 
             player = vlc.MediaPlayer(current_song)
             player.play()
@@ -211,6 +209,7 @@ while player.get_length() <= 0 and waited < 5:
 
 if player.get_length() <= 0:
     current_song_name = current_song_name + " (could not load)"
+
 length_of_song = max(0, player.get_length()) / 1000.0
 widget = widgets.UiWidgets(current_song_name, player, name_for_Playlist, current_song_index, volume)
 

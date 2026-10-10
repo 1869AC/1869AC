@@ -12,5 +12,5 @@
 [0]            : Mute Toggle                  | [V]            : Create Virtual Playlist
 [S]            : Toggle Shuffle               |    [Enter]        : Mark / Unmark song (then [F] to finish)
 [E]            : Toggle Repeat (Auto / One)   | [B]            : Delete Playlist
-                                              | [I]            : Import Single Song
-                                              | [R]            : Remove Song From Playlist
+                                              | [I]            : Import Single Song (virtual only)
+                                              | [R]            : Remove Song (virtual only)
