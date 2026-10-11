@@ -9,7 +9,7 @@ export default function NavBar () {
     <nav className = "nav">
         <div className = "logo">
             <img className = "small" src = {cover} />
-            <p> meow </p>
+            <p> 1869AC </p>
         </div>
 
         {/* THE ACTUAL LIST! */}

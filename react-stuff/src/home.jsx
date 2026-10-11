@@ -3,7 +3,7 @@ import './index.css'
 import Animation from './animation.jsx'
 import { motion } from 'framer-motion'
 
-// static image assets for sections and decorative grid
+// static image assets for sections and decorative grid 34-7 = 27 imgs
 import left from "./assets/left.PNG"
 import right from "./assets/right.PNG"
 import chest from "./assets/chest.PNG"
@@ -37,7 +37,7 @@ import wall from "./assets/wall.PNG"
 var letters = ["1", "8", "6", "9", "A", "C"]
 
 // asset list for the bottom randomized deco gallery
-var icons = [wall, wallcloser, wallclosed, wallblank, wall3, wall2, greywall2, greyfloor3, greyfloor1, floor4, floor3, floor2, floor1, grate4, grate3, grate2, grate1, tank, locker, human, human2, fish, fish3, cover, couch, chest]
+var all = [wall, wallcloser, wallclosed, wallblank, wall3, wall2, greywall2, greyfloor3, greyfloor1, floor4, floor3, floor2, floor1, grate4, grate3, grate2, grate1, tank, locker, human, human2, fish, fish3, cover, couch, chest]
 
 export default function Home() {
   // DOM references for instant scroll and section navigation
@@ -90,7 +90,7 @@ export default function Home() {
           <div className="mini">
             <p> The offline and online music player! </p>
             <div className="flex_row">
-              {/* navigate down to product info */}
+              {/* navigate down to info */}
               <button onClick={scrollPage}>
                 Let's go!
               </button>
@@ -167,9 +167,14 @@ export default function Home() {
 
       {/* randomized decorative sprite footer */}
       <div>
-        {icons.sort(function() { return Math.random() - 0.5 }).map(function(item, index) {
-          return <img className="small" key={index} src={item} />
-        })}
+        {[...all].sort(() => Math.random() - 0.5)
+        .map((img,index) => (
+          <img
+            className = "icon"
+            key = {index}
+            src = {img}
+          />
+        ))}
       </div>
     </div>
   )
