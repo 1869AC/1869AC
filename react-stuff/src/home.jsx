@@ -62,7 +62,7 @@ export default function Home() {
     <div ref={topRef}>
       {/* primary viewport hero section */}
       <motion.div
-        id="column"
+        className="column"
         initial={{ opacity: 1, y: 150 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, amount: 0.1 }}

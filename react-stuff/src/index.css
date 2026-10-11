@@ -46,7 +46,7 @@ p {
 }
 
 /* primary hero viewport container */
-#column {
+.column {
   background: #181513;
   padding: 10px 0;
   width: 100%;
@@ -58,7 +58,12 @@ p {
   justify-content: center;
   align-items: center;
 }
-
+.columner {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
 /* full page info sections */
 .biggie {
   text-align: center;
@@ -257,6 +262,7 @@ button:hover {
   gap: 5em;
   align-self:center;
   text-align: center;
+  padding-bottom: 50px; 
 }
 
 /* STOP DELTING MY CODE!!! */
@@ -298,4 +304,22 @@ button:hover {
   background-size: cover; 
   background-position: center; 
   background-repeat: no-repeat; 
+}
+.los{
+  font-family: terminal; 
+  font-size: 100px; 
+  padding-bottom: 30px; 
+}
+.special_button{
+  display: flex; 
+  align-items: center; 
+  padding: 0 ; 
+  margin: 0; 
+  width: 35px; 
+  height: 35px; 
+  overflow: hidden; 
+}
+.special_button img{
+  width: 100%; 
+  height: auto; 
 }
