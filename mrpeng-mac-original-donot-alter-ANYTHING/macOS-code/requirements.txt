@@ -1,3 +1,0 @@
-pygame-ce
-python-vlc
-requires desktop vlc as well :)
