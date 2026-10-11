@@ -254,12 +254,14 @@ class UiWidgets:
         try:
             while True:
                 self.now_real_time = datetime.datetime.now().strftime("%d %b %Y %I:%M")
-                self.play_pause = "⏸"
                 key = self.check_key_presses()
 
                 if key:
                     if key in (' ', "k"):
-                        self.play_pause = "▶"
+                        if self.play_pause == "▶":
+                            self.play_pause = "⏸"
+                        else:
+                            self.play_pause = "▶"
                         self.click_sound.play()
                         player.pause()
 
@@ -424,6 +426,7 @@ class UiWidgets:
                         self.seconds_for_vinyl = 0
                     self.render(song_time, self.current_index, playlist)
                 else:
+                    self.render(song_time, self.current_index, playlist)
                     time.sleep(0.1)
 
                 if player.get_state() == vlc.State.Ended:
@@ -842,6 +845,7 @@ class UiWidgets:
             create_virtual_playlist_in_songs_path(user_playlist_name, chosen_songs)
             time.sleep(1)
             self.hard_clear_screen()
+            self.enable_cbreak()
 
     def force_import_loop(self):
         while get_playlists() == []:
@@ -961,6 +965,7 @@ class UiWidgets:
 
     def delete_song_prompt(self, player, playlist, song_time, current_index):
         if is_folder_playlist(self.name_of_playlist):
+            self.hard_clear_screen()
             print("This playlist stays in sync with its folder, so songs can't be removed here.")
             print("Only virtual playlists can be edited.")
             time.sleep(2)
@@ -1014,6 +1019,7 @@ class UiWidgets:
 
     def import_single_song_prompt(self, playlist):
         if is_folder_playlist(self.name_of_playlist):
+            self.hard_clear_screen()
             print("This playlist stays in sync with its folder, so songs can't be added here.")
             print("Only virtual playlists can be edited.")
             time.sleep(2)
