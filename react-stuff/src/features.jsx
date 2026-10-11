@@ -27,7 +27,7 @@ export default function Features() {
             <p><b>Playlist selector:</b> select and choose between your favorite playlists.</p>
             <p><b>Song selector:</b> select and choose between your favorite Songs.</p>
         </div>
-        <button style = {{fontSize: "2vw"}} onClick = {() => Navigate("/")}> Go back Home </button>
+        <button style = {{fontSize: "max(2vw, 16px)"}} onClick = {() => Navigate("/")}> Go back Home </button>
     </div>
   );
-} 
+}

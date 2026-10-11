@@ -31,6 +31,9 @@ export default function App() {
     <BrowserRouter basename="/">
       <Navbar/>
       <Topset/>
+      <footer className="footer">
+        <p> Built with 🤍 for 1869AC </p>
+      </footer>
     </BrowserRouter>
   );
 }
