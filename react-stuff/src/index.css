@@ -213,7 +213,7 @@ p {
 }
 
 /* primary call to action button */
-.lets-go-btn {
+button {
   color: #181513;
   background: #d4b28c;
   border: 2px solid #f5f0eb;
@@ -225,6 +225,32 @@ p {
   cursor: pointer;
 }
 
-.lets-go-btn:hover {
+button:hover {
   background: #e6c5a8;
+}
+.instructions{
+  display: flex; 
+  flex-direction: column; 
+  gap: 3em;
+  font-size: 15px; 
+  padding-bottom: 2em;
+  background-image: linear-gradient(rgba(58, 57, 57, 0.519),rgba(17, 17, 17, 0.881)), url("./assets/cover.PNG");
+  background-size: cover; 
+  background-position: center; 
+  background-repeat: no-repeat;
+  padding: 20px;
+}
+.instructions p,
+.instructions h1{
+  color: white; 
+  font-family: terminal;
+}
+.form{
+  display: flex; 
+  flex-direction: column; 
+  justify-content: center;
+  align-items: center; 
+  gap: 5em;
+  align-self:center;
+  text-align: center;
 }

@@ -91,7 +91,7 @@ export default function Home() {
             <p> The offline and online music player! </p>
             <div className="flex_row">
               {/* navigate down to product info */}
-              <button className="lets-go-btn" onClick={scrollPage}>
+              <button onClick={scrollPage}>
                 Let's go!
               </button>
             </div>
