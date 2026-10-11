@@ -22,3 +22,9 @@ python main.py
 
 Windows Terminal (the default terminal on Windows 11) shows the player symbols best.
 Your `songs_path.py` stores full file paths, so don't copy it between Mac and Windows. Start with an empty one and import your music folder again.
+
+## Website
+
+```
+https://thepillu.site
+```
