@@ -15,7 +15,7 @@ except (ImportError, OSError):
     sys.exit(1)
 import widgets
 import songs_path
-from import_system import append_folder_to_songs_path
+from import_system import append_folder_to_songs_path, get_playlists
 import re
 import importlib
 from pathlib import Path
@@ -75,12 +75,8 @@ def sync_playlists_with_folders():
 
         time.sleep(2)
 
-
-sync_playlists_with_folders()
-
-with open("songs_path.py", "r") as song:
-    if not song.read().strip():
-        while True:
+if not get_playlists():
+    while True:
             print("\033[H\033[2J", end="", flush=True)
             print("+=======================================================================+")
 
@@ -97,12 +93,14 @@ with open("songs_path.py", "r") as song:
             if "" != user_directory and "" != user_directory_name:
                 answer = append_folder_to_songs_path(user_directory, user_directory_name)
                 if answer:
-                    print("Playlist saved! Please rerun the script to load your music.")
+                    print("Playlist saved! Loading...")
                     print("\033[H\033[2J", end="", flush=True)
                     break
                 else:
                     print("Playlist not saved! Please try again")
                     time.sleep(1.5)
+
+sync_playlists_with_folders()
 
 playlists_list = []
 
