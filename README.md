@@ -133,9 +133,9 @@ This is a music player project that has both a terminal + online portion!
 
 * The ***Website portion*** has begun development and is not functional! At the moment its got cool css + a really cool home page! It also has a functional login and signup page. The features page is outdated - but does features some of our terminal projects coolest features! In the future this part of the project will also be able to play music and save playlists (recreating spotify hehe)
 
-* **Github: ** https://github.com/1869AC/1869AC
+* ** Github: ** https://github.com/1869AC/1869AC
 
-* **Website: ** https://thepillu.site
+* ** Website: ** https://thepillu.site
 
 ## Installation
 ---
