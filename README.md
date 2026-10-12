@@ -199,7 +199,7 @@ https://thepillu.site
 
 * Works  on mac, linux, and windows! (cross compatibility was hard to achieve)
 
-* The website has a signup/login page and cool homepage animations and css at the moment! There is also an (outdated) features tab and instructions for how to clone the project (also outdated as now we have installation instructions!) This is a heavy work in progress!
+* The website has a signup/login page and cool homepage animations and css at the moment! There is also an (outdated) features tab and instructions for how to clone the project (also outdated as now we have installation instructions!), and a cute footer. This is a heavy work in progress!
 
 ## Ai Usage
 ---
