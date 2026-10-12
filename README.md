@@ -152,6 +152,13 @@ brew install ac1869
 1869ac
 ```
 
+**Dependencies: python-vlc, pygame-ce
+
+```
+pip install pygame-ce
+pip install python-vlc
+```
+
 ### Windows
 ---
 
