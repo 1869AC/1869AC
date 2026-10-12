@@ -4,28 +4,28 @@ A terminal music player with a bunch of cool features + an online site to play m
 
 ### Skip ahead!
 
-* [Code Architecture](##code-architecture)
+* [Code Architecture](#code-architecture)
 
 
-* [Description](##description)
+* [Description](#description)
 
 
-* [Installation](##installation)
+* [Installation](#installation)
 
 
-* [Website](##website)
+* [Website](#website)
 
 
-* [Features](##features)
+* [Features](#features)
 
 
-* [Ai Usage](##ai-usage)
+* [Ai Usage](#ai-usage)
 
 
-* [Learning](##learning)
+* [Learning](#learning)
 
 
-* [Screenshots](##screenshots)
+* [Screenshots](#screenshots)
 
 
 ## Code Architecture
@@ -180,7 +180,7 @@ https://thepillu.site
 * A mermaid flow chart 
 
 * The Terminal app provides a lot of very speficic music functions! Here are them all! :
-
+```
 [Space] or [K] : Play / Pause                 | [Z]            : View Songs in Current Playlist
 [Q]            : Quit Player                  |    [Q]            : Quit song selector
 [H]            : Open/Close Help Menu         |    [M]            : Cycle through the songs Downwards
@@ -195,6 +195,7 @@ https://thepillu.site
 [E]            : Toggle Repeat (Auto / One)   | [B]            : Delete Playlist
                                               | [I]            : Import Single Song (virtual only)
                                               | [R]            : Remove Song (virtual only)
+```
 
 * Works  on mac, linux, and windows! (cross compatibility was hard to achieve)
 
