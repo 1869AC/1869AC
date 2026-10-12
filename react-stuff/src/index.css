@@ -314,6 +314,7 @@ button:hover {
   text-align: center;
   box-sizing: border-box;
   width: 100%;
+}
 .instructions{
   display: flex; 
   flex-direction: column; 
