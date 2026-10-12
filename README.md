@@ -214,10 +214,22 @@ https://thepillu.site
 
 * A lot was learned from this project (after all we've been working on this for a prettty long time!)
 
-### jyoshita
+#### jyoshita
 ---
 
 * I learned how to use python and a lot of cool syntax (like for detecting keypresses, using supabase in python whyyy is it different, using try catch blocks in python, mscvrt a bit and much more!), and in javascript i got to hone my skills more ! I learned about a cool website called  Ascii motion - https://www.ascii-motion.com/ - that makes ascii animations for you. In the end they did not really end up serving our needs tho so a lot of it had to be rewritten by justmischeif! :D I had a lot of fun on this project and learned a lot over all 
+
+#### ADD NAME
+---
+*
+####  ADD NAME
+---
+*
+
+####  ADD NAME
+---
+*
+
 
 ## Screenshots
 ---
