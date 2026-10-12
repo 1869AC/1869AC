@@ -5,7 +5,6 @@ import vlc
 import datetime
 from pygame import mixer
 import random
-
 try:
     import select
     HAS_SELECT = True
@@ -21,14 +20,14 @@ except ImportError:
     termios = None
     tty = None
     HAS_TERMIOS = False
-
 try:
     import msvcrt
     HAS_MSVCRT = True
 except ImportError:
     msvcrt = None
     HAS_MSVCRT = False
-
+if os.name == "nt":
+    os.system("")
 IS_WINDOWS = (os.name == "nt" or sys.platform == "win32") and HAS_MSVCRT
 
 LIST_BOX_WIDTH = 80
@@ -40,7 +39,7 @@ def truncate(text, max_width):
     return text if len(text) <= max_width else text[:max_width - 3] + "..."
 
 def _song_name(path):
-    base = str(path).replace("\\", "/").split("/")[-1]
+    base = os.path.basename(str(path))
     stem, dot, _ext = base.rpartition(".")
     return stem if dot and stem else base
 
@@ -577,7 +576,7 @@ class UiWidgets:
                 "",
                 f"[ {self.current_vinyl} {self.song}]",
                 f"[{self.new_timeline}] [{self.current_min}:{self.current_sec:02d}|{total_time_str}] ",
-                f"[ {self.loop_type_symbol} {self.play_pause} {self.shuffle_symbol} ] [{"".join(self.volume_list)} {self.volume_level * 10}%] [{current_song_index + 1}/{len(playlist)}]",
+                f"[ {self.loop_type_symbol} {self.play_pause} {self.shuffle_symbol} ] [{''.join(self.volume_list)} {self.volume_level * 10}%] [{current_song_index + 1}/{len(playlist)}]",
                 f"[{self.now_real_time}]",
                 "",
                 "+=================================================+",
@@ -957,7 +956,8 @@ class UiWidgets:
             self.hard_clear_screen()
             self.enable_cbreak()
             return
-
+        if " " in user_directory_name:
+            user_directory_name = user_directory_name.replace(" ", "_")
         if not is_valid_playlist_name(user_playlist_name):
             print("Playlist name can only use letters, numbers and underscores, and can't start with a number.")
             time.sleep(1.5)

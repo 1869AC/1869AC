@@ -2,11 +2,6 @@ import json
 import os
 import sys
 
-stderr_fd = sys.stderr.fileno()
-devnull = os.open(os.devnull, os.O_WRONLY)
-os.dup2(devnull, stderr_fd)
-os.close(devnull)
-
 import time
 try:
     import vlc
@@ -20,6 +15,19 @@ import re
 import importlib
 from pathlib import Path
 
+if os.name == "nt":
+    os.system("")
+if os.name != "nt" or os.name != "win32":
+    stderr_fd = sys.stderr.fileno()
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    os.dup2(devnull, stderr_fd)
+    os.close(devnull)
+##SUPABASE STUFF
+name2 = "guest"
+username = "guest"
+jsdoit = False
+from supabaseclient import supabase
+from auth import account
 def sync_playlists_with_folders():
     valid_exts = {'.mp3', '.wav', '.flac', '.m4a', '.ogg'}
 
@@ -74,6 +82,30 @@ def sync_playlists_with_folders():
         importlib.reload(songs_path)
 
         time.sleep(2)
+#FIRST ASK LOGIN OR LOCAL!
+print("+====================================================+")
+print("Hello! Welcome to 1869AC - the terminal music player!")
+print("Continue as a guest or authenticate to save your playlists to the cloud!")
+print("( a/ g ): ")
+choice = input("").strip()
+if choice.lower() == 'a':
+    name2 = account()
+    if name2 != "guest":
+        #user exists need to sync to cloud
+        try:
+            response = supabase.table("users").select("songs").eq("id", name2).maybe_single().execute()
+            if response is None or response.data is None:
+                jsdoit = True
+            else:
+                ##SONG JSON THERE
+                playlists_list = response.data["songs"] or []
+        except Exception as e:
+            print(e)
+    elif choice.lower() == 'g':  
+        print("continuing as a guest...") 
+    else:
+        print("invalid. defaulting to guest mode.") 
+    print("+====================================================+")
 
 if not get_playlists():
     while True:
@@ -95,6 +127,21 @@ if not get_playlists():
                 if answer:
                     print("Playlist saved! Loading...")
                     print("\033[H\033[2J", end="", flush=True)
+                    if name2 != "guest":
+                        oldSongs = []
+                        try: 
+                            response = supabase.table("users").select("songs").eq("id", name2).maybe_single().execute()
+                            if response is None or response.data is None:
+                                oldSongs = []
+                            else:
+                                oldSongs = response.data["songs"]
+                            response = supabase.table("users").upsert({
+                                "id": name2, 
+                                "songs": oldSongs + [{"dir": user_directory, "name":user_directory_name}]
+                            }).execute()
+                        except Exception as e: 
+                            print(e)
+                            
                     break
                 else:
                     print("Playlist not saved! Please try again")
@@ -136,9 +183,10 @@ while True:
             playlist = getattr(songs_path, name_for_Playlist)
             current_song_index = user_saves["index_of_song"]
             current_song = playlist[current_song_index]
-            current_song_name = current_song.split("/")[-1]
-
-            player = vlc.MediaPlayer(current_song)
+            current_song_name = Path(current_song).name
+            #### added
+            current_song_path = str(current_song).replace("\\", "/")
+            player = vlc.MediaPlayer(current_song_path)
             player.play()
             volume = user_saves.get("self.volume_level", 10)
             player.audio_set_volume(volume * 10)
@@ -170,9 +218,10 @@ while True:
 
             current_song_index = 0
             current_song = playlist[current_song_index]
-            current_song_name = current_song.split("/")[-1]
+            current_song_name = Path(current_song).name
 
-            player = vlc.MediaPlayer(current_song)
+            current_song_path = str(current_song).replace("\\", "/")
+            player = vlc.MediaPlayer(current_song_path)
             player.play()
 
             try:
