@@ -235,5 +235,12 @@ https://thepillu.site
 ---
 
 **website**
+<img width="765" height="972" alt="web3" src="https://github.com/user-attachments/assets/27581239-3235-449c-8288-8862d8de126e" />
+<img width="575" height="802" alt="web2" src="https://github.com/user-attachments/assets/21a28064-35cd-4e8d-8723-1aef88e2a16c" />
+<img width="1165" height="867" alt="web1" src="https://github.com/user-attachments/assets/3c51ebe3-ec43-4fb0-81a3-af1a950698ee" />
 
 **terminal**
+
+<img width="1051" height="257" alt="termminal1" src="https://github.com/user-attachments/assets/d19ac061-9f78-4d5b-ac02-7c2e5905d652" />
+<img width="832" height="381" alt="termianl3" src="https://github.com/user-attachments/assets/75ce3434-d943-4a1f-a0be-53248086acd7" />
+<img width="802" height="257" alt="terminal1" src="https://github.com/user-attachments/assets/b36cd574-4f12-4e73-a975-33f54a01cebf" />
