@@ -4,7 +4,7 @@ import {set_login_status} from './data.jsx'
 import {supabase} from './main.jsx'
 import show from "./assets/showpass.PNG"
 import hide from "./assets/hidepass.PNG"
-
+const supabaseUsernameRegex = /^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*$/;
 //MY BELOVED TOASTER
 import toast from 'react-hot-toast';
 
@@ -15,6 +15,12 @@ export default function signup(){
     const [passimg, setPassImg] = useState(false)
     async function submit(e) { 
         e.preventDefault(); 
+        const isValid = supabaseUsernameRegex.test(name)
+        if (!isValid){
+            toast.error("Sorry. No spaces, '@' or leading/trailing periods allowed")
+            return
+        } 
+
         // DB CODE
         const real_username = name + "@gmail.com"
         try{
@@ -25,7 +31,7 @@ export default function signup(){
                 }
             )
             if (error) throw error
-            toast.success("Accound already exists. logging you in!")
+            toast.success("Account already exists. logging you in!")
             set_login_status(true)
             console.log("ERM WHAT THE SIGMA")
             setTimeout(()=>{Navigate("/dashboard")},[1000])

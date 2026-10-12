@@ -1,7 +1,35 @@
 # 1869AC
-it is just natural code for the music player
+---
+A terminal music player with a bunch of cool features + an online site to play music as well!
+
+### Skip ahead!
+
+* [Code Architecture](##code-architecture)
+
+
+* [Description](##description)
+
+
+* [Installation](##installation)
+
+
+* [Website](##website)
+
+
+* [Features](##features)
+
+
+* [Ai Usage](##ai-usage)
+
+
+* [Learning](##learning)
+
+
+* [Screenshots](##screenshots)
+
 
 ## Code Architecture
+---
 
 ```mermaid
 flowchart TD
@@ -97,8 +125,24 @@ class node_siteentry,node_siterouter,node_homepage,node_featurespage,node_naviga
 class node_login,node_signup,node_protection,node_authdata,node_authservice,node_supabaseclient toneRose
 class node_listener,node_musicfolders,node_vlc toneIndigo
 ```
+## Description
+--- 
 
-## Mac
+This is a music player project that has both a terminal + online portion!
+* The ***Terminal Porition*** is fully functional at the moment and you can skip ahead, rewind, add multiple different playlists, virtual playlists, shuffle, repeat, and so much more! In the future a login page will also be added to cloud save playlists!
+
+* The ***Website portion*** has begun development and is not functional! At the moment its got cool css + a really cool home page! It also has a functional login and signup page. The features page is outdated - but does features some of our terminal projects coolest features! In the future this part of the project will also be able to play music and save playlists (recreating spotify hehe)
+
+* **Github: ** https://github.com/1869AC/1869AC
+
+* **Website: ** https://thepillu.site
+
+## Installation
+---
+A guide for how to install our terminal portion! It ought to work for mac, linux, and windows OS!
+
+### Mac/Linux
+---
 
 ```
 brew install --cask vlc
@@ -108,7 +152,8 @@ brew install ac1869
 1869ac
 ```
 
-## Windows
+### Windows
+---
 
 1. Install Python 3.12 or newer (tick "Add Python to PATH" in the installer)
 2. Install the 64-bit VLC media player from https://www.videolan.org/vlc/ (it has to match your Python, so 64-bit with 64-bit)
@@ -123,7 +168,58 @@ Windows Terminal (the default terminal on Windows 11) shows the player symbols b
 Your `songs_path.py` stores full file paths, so don't copy it between Mac and Windows. Start with an empty one and import your music folder again.
 
 ## Website
+---
 
+Be sure to check out the work in progress site as well! 
 ```
 https://thepillu.site
 ```
+## FEATURES 
+---
+
+* A mermaid flow chart 
+
+* The Terminal app provides a lot of very speficic music functions! Here are them all! :
+
+[Space] or [K] : Play / Pause                 | [Z]            : View Songs in Current Playlist
+[Q]            : Quit Player                  |    [Q]            : Quit song selector
+[H]            : Open/Close Help Menu         |    [M]            : Cycle through the songs Downwards
+[M]            : Next Song                    |    [N]            : Cycle through the songs Upwards
+[N]            : Previous Song                |    [Enter]        : Play the selected song
+[D] or [l]     : Fast Forward 10 seconds      | [X]            : Change Playlist
+[A] or [j]     : Rewind 10 seconds            |    [`]        : Entering this key exits you out of the selector
+[P]            : Volume Up                    | [C]            : Import New Folder / Playlist
+[O]            : Volume Down                  |    [`]        : Entering this key exits you out of the selector
+[0]            : Mute Toggle                  | [V]            : Create Virtual Playlist
+[S]            : Toggle Shuffle               |    [Enter]        : Mark / Unmark song (then [F] to finish)
+[E]            : Toggle Repeat (Auto / One)   | [B]            : Delete Playlist
+                                              | [I]            : Import Single Song (virtual only)
+                                              | [R]            : Remove Song (virtual only)
+
+* Works  on mac, linux, and windows! (cross compatibility was hard to achieve)
+
+* The website has a signup/login page and cool homepage animations and css at the moment! There is also an (outdated) features tab and instructions for how to clone the project (also outdated as now we have installation instructions!) This is a heavy work in progress!
+
+## Ai Usage
+---
+
+* Ai was not used in generating any of the core concepts that are currently featured in this project. 
+* Howver one file that is not being implemented right now that was for themes is AI generated. It is under temporary py files!
+* Ai was not used in generating any of our media and art as well! 
+
+## Learning
+---
+
+* A lot was learned from this project (after all we've been working on this for a prettty long time!)
+
+### jyoshita
+---
+
+* I learned how to use python and a lot of cool syntax (like for detecting keypresses, using supabase in python whyyy is it different, using try catch blocks in python, mscvrt a bit and much more!), and in javascript i got to hone my skills more ! I learned about a cool website called  Ascii motion - https://www.ascii-motion.com/ - that makes ascii animations for you. In the end they did not really end up serving our needs tho so a lot of it had to be rewritten by justmischeif! :D I had a lot of fun on this project and learned a lot over all 
+
+## Screenshots
+---
+
+**website**
+
+**terminal**
