@@ -2,8 +2,8 @@ import { useState , useEffect, useRef} from 'react'
 import { useNavigate} from 'react-router-dom'
 import {set_login_status} from './data.jsx'
 import {supabase} from './main.jsx'
-import show from "./assets/showpass.PNG"
-import hide from "./assets/hidepass.PNG"
+import show from "./assets/showpass.png"
+import hide from "./assets/hidepass.png"
 const supabaseUsernameRegex = /^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*$/;
 //MY BELOVED TOASTER
 import toast from 'react-hot-toast';
