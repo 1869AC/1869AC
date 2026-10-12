@@ -2,6 +2,8 @@ import { useState , useEffect, useRef} from 'react'
 import { useNavigate} from 'react-router-dom'
 import {set_login_status} from './data.jsx'
 import {supabase} from './main.jsx'
+import show from "./assets/showpass.png"
+import hide from "./assets/hidepass.png"
 
 //MY BELOVED TOASTER
 import toast from 'react-hot-toast';
@@ -10,6 +12,7 @@ export default function login(){
     const Navigate = useNavigate()
     const [name, setName] = useState("")
     const [password, setPassword] = useState("")
+    const [passimg, setPassImg] = useState(false)
     async function submit(e) { 
         e.preventDefault(); 
         // DB CODE
@@ -32,7 +35,7 @@ export default function login(){
     }
     return(
         <div className = "container">
-            <p> Login! </p>
+            <p className = "los"> Login! </p>
             <form className = "form" onSubmit = {submit}>
                 <input 
                 placeholder = "name"
@@ -40,16 +43,21 @@ export default function login(){
                 minLength = "6"
                 onChange =  {(e) => {setName(e.target.value)}}
                 />
-                <input 
-                placeholder = "password"
-                maxLength = "18"
-                minLength = "6"
-                type = "password"
-                onChange = {(e) => {setPassword(e.target.value)}}
-                />
-                <button type = "submit"> Submit! </button>
+                <div className = "columner">
+                    <div style = {{paddingLeft: "50px", gap: "8px"}}className = "row"> 
+                        <input 
+                        placeholder = "password"
+                        maxLength = "18"
+                        minLength = "6"
+                        type = "password"
+                        onChange = {(e) => {setPassword(e.target.value)}}
+                        />
+                        <button type = "button" className = "special_button" onClick = {() => setPassImg(!passimg)}> <img src = {passimg? show: hide } alt = "show password" /> </button>
+                    </div>
+                    <p> {passimg?`${password}`:""}</p> 
+                </div>
+                <button style = {{backgroundColor: "rgb(140, 8, 8)", color: "white"}} type = "submit"> Submit! </button>
             </form>
-            <p> {`Name ${name} Password ${password}`}</p>
             <button type = "button" onClick = {() => Navigate('/signup')}> Signup </button>
         </div>
     );

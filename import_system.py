@@ -37,14 +37,15 @@ def append_folder_to_songs_path(folder_path, playlist_name):
     for variable_name in dir(songs_path):
         if not variable_name.startswith("__"):
             playlists_list.append(variable_name)
-
+    if " " in playlist_name:
+        playlist_name = playlist_name.replace(" ", "_")
     if not is_valid_playlist_name(playlist_name):
         print("Playlist name can only use letters, numbers and underscores, and can't start with a number.")
 
         return False
 
     if playlist_name in playlists_list:
-        print("this name is already taken please and try something other")
+        print("This name is already taken please and try something else!")
 
         return False
 
@@ -124,7 +125,7 @@ def delete_song_from_playlist(playlist_name, song_index):
 
     removed_song = songs.pop(song_index)
     save_playlist_to_songs_path(playlist_name, songs)
-    print(f"Removed '{removed_song.split('/')[-1]}' from '{playlist_name}'.")
+    print(f"Removed '{Path(removed_song).name}' from '{playlist_name}'.")
     return True
 
 def add_song_to_playlist(playlist_name, song_path):

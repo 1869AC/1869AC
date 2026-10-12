@@ -5,7 +5,6 @@ import vlc
 import datetime
 from pygame import mixer
 import random
-
 try:
     import select
     HAS_SELECT = True
@@ -15,21 +14,34 @@ except ImportError:
 
 try:
     import termios
-    import tty
+    import tty # line 18
     HAS_TERMIOS = True
 except ImportError:
     termios = None
     tty = None
     HAS_TERMIOS = False
-
 try:
     import msvcrt
     HAS_MSVCRT = True
 except ImportError:
     msvcrt = None
     HAS_MSVCRT = False
-
+if os.name == "nt":
+    os.system("")
 IS_WINDOWS = (os.name == "nt" or sys.platform == "win32") and HAS_MSVCRT
+
+LIST_BOX_WIDTH = 80
+DIM = "\033[2m"
+REV = "\033[7m"
+RESET = "\033[0m"
+
+def truncate(text, max_width):
+    return text if len(text) <= max_width else text[:max_width - 3] + "..."
+
+def _song_name(path):
+    base = os.path.basename(str(path))
+    stem, dot, _ext = base.rpartition(".")
+    return stem if dot and stem else base
 
 from import_system import append_folder_to_songs_path, get_playlists, is_valid_playlist_name, \
     delete_playlist_from_songs_path, delete_song_from_playlist, add_song_to_playlist, \
@@ -105,7 +117,7 @@ class UiWidgets:
             return None
         if len(seq) == 1:
             return None
-        rest = seq[1:]
+        rest = seq[1:] 
         if rest.startswith('[') or rest.startswith('O'):
             last = rest[-1]
             if last == 'A':
@@ -121,8 +133,10 @@ class UiWidgets:
     def check_key_presses(self):
         if self._pending_keys:
             return self._pending_keys.pop(0)
+        
         if IS_WINDOWS:
             return self._check_key_windows()
+        
         return self._check_key_unix()
 
     def _check_key_windows(self):
@@ -132,14 +146,60 @@ class UiWidgets:
             ch = msvcrt.getwch()
         except (AttributeError, ValueError, OSError, IOError):
             return None
-        if ch in ('\x00', '\xe0'):
+        if ch == "\x1b":
+            for _ in range(15):
+                if msvcrt.kbhit():
+                    break
+                    
+                time.sleep(0.002)
+
+            if not msvcrt.kbhit():
+                return "ESC"
+                
+            ch2 = msvcrt.getwch()
+            if ch2 == "[":
+                for _ in range(15):
+                    if msvcrt.kbhit():
+                        break
+                    time.sleep(0.002)
+                        
+                if msvcrt.kbhit():
+                    ch3 = msvcrt.getwch()
+                    arrow = {"A": "UP", "B": "DOWN", "C": "RIGHT", "D": "LEFT",
+                            "a": "UP", "b": "DOWN", "c": "RIGHT", "d": "LEFT"}.get(ch3)
+                        
+                    if arrow:
+                        return arrow
+                        
+                return None
+                
+            if ch2 in ("O", "o"):
+                for _ in range(15):
+                    if msvcrt.kbhit():
+                        break
+                    time.sleep(0.002)
+                if msvcrt.kbhit():
+                    ch3 = msvcrt.getwch()
+                    arrow = {"A": "UP", "B": "DOWN", "C": "RIGHT", "D": "LEFT",
+                                "a": "UP", "b": "DOWN", "c": "RIGHT", "d": "LEFT"}.get(ch3)
+
+                    if arrow:
+                        return arrow
+
+                return {"A": "UP", "B": "DOWN", "C": "RIGHT", "D": "LEFT"}.get(ch2)
+
+        if ch in ("\x00", "\xe0"):
             try:
                 ch2 = msvcrt.getwch()
+
             except (AttributeError, ValueError, OSError, IOError):
                 return None
-            return {'H': 'UP', 'P': 'DOWN', 'K': 'LEFT', 'M': 'RIGHT'}.get(ch2, None)
-        if ch == '\r':
-            return '\n'
+
+            return {"H": "UP", "P": "DOWN", "K": "LEFT", "M": "RIGHT",
+                    "h": "UP", "p": "DOWN", "k": "LEFT", "m": "RIGHT"}.get(ch2, None)
+
+        if ch == "\r":
+            return "\n"
         return ch
 
     def _check_key_unix(self):
@@ -254,12 +314,14 @@ class UiWidgets:
         try:
             while True:
                 self.now_real_time = datetime.datetime.now().strftime("%d %b %Y %I:%M")
-                self.play_pause = "⏸"
                 key = self.check_key_presses()
 
                 if key:
                     if key in (' ', "k"):
-                        self.play_pause = "▶"
+                        if self.play_pause == "▶":
+                            self.play_pause = "⏸"
+                        else:
+                            self.play_pause = "▶"
                         self.click_sound.play()
                         player.pause()
 
@@ -424,6 +486,7 @@ class UiWidgets:
                         self.seconds_for_vinyl = 0
                     self.render(song_time, self.current_index, playlist)
                 else:
+                    self.render(song_time, self.current_index, playlist)
                     time.sleep(0.1)
 
                 if player.get_state() == vlc.State.Ended:
@@ -513,7 +576,7 @@ class UiWidgets:
                 "",
                 f"[ {self.current_vinyl} {self.song}]",
                 f"[{self.new_timeline}] [{self.current_min}:{self.current_sec:02d}|{total_time_str}] ",
-                f"[ {self.loop_type_symbol} {self.play_pause} {self.shuffle_symbol} ] [{"".join(self.volume_list)} {self.volume_level * 10}%] [{current_song_index + 1}/{len(playlist)}]",
+                f"[ {self.loop_type_symbol} {self.play_pause} {self.shuffle_symbol} ] [{''.join(self.volume_list)} {self.volume_level * 10}%] [{current_song_index + 1}/{len(playlist)}]",
                 f"[{self.now_real_time}]",
                 "",
                 "+=================================================+",
@@ -580,218 +643,302 @@ class UiWidgets:
             pass
         self._pending_keys = []
 
-    def select_playlist(self, player, playlist, song_time, current_index):
-        self.disable_cbreak(self.old_settings)
+    def _searchable_pick(self, title, names, multi=False):
+        all_songs = list(enumerate(names))
+        filtered = all_songs
+        query = ""
+        searching = False
+        sel = 0
+        start = 0
+        caret = True
+        last = time.monotonic()
+        chosen = set()
+        needs_redraw = True
+        
+
+        def refilter():
+            nonlocal filtered, sel, start, needs_redraw, caret, last
+            q = query.strip().lower()
+            filtered = all_songs if not q else [(i, n) for i, n in all_songs if q in n.lower()]
+            sel = 0
+            start = 0
+            caret = True
+            last = time.monotonic()
+            needs_redraw = True
+
         self.hard_clear_screen()
+        while True:
+            total = len(filtered)
+            start = max(0, min(start, max(0, total - 10)))
+            end = min(start + 10, total)
 
-        playlists_list = []
+            if searching and time.monotonic() - last >= 0.5:
+                caret = not caret
+                last = time.monotonic()
+                needs_redraw = True
 
-        for variable_name in dir(songs_path):
-            if not variable_name.startswith("__"):
-                playlists_list.append(variable_name)
+            if needs_redraw:
+                lines = []
+                border = "+" + "-" * LIST_BOX_WIDTH + "+"
+                lines.append(border)
 
-        print("+==================================+")
-        print("         SELECT A PLAYLIST          ")
-        print("+==================================+")
+                if title:
+                    t = (" " + truncate(str(title), LIST_BOX_WIDTH - 1)).ljust(LIST_BOX_WIDTH)[:LIST_BOX_WIDTH]
+                    lines.append(f" {t} ")
 
-        for index in range(0, len(playlists_list)):
-            print(f"{index}. {playlists_list[index]}")
+                if searching:
+                    c = "▌" if caret else " "
+                    left = f" {query[-66:]}{c}"
+                    right = f"{total}/{len(all_songs)}"
+                    ml = LIST_BOX_WIDTH - len(right) - 1
+                    if len(left) > ml:
+                        left = left[-ml:]
+                    gap = LIST_BOX_WIDTH - len(left) - len(right)
+                    lines.append(f" {left}{' ' * max(gap, 1)}{DIM}{right}{RESET} ")
+                else:
+                    lines.append(f" {' Search: [press /]'.ljust(LIST_BOX_WIDTH)[:LIST_BOX_WIDTH]} ")
 
-        print("\nPlease enter the number next to the playlist you want to play: ")
-        playlist_index = input("").strip()
+                lines.append(border)
 
-        if playlist_index == "`":
-            print("Returning back...")
-            time.sleep(0.5)
+                if total == 0:
+                    inner = " No match found!".ljust(LIST_BOX_WIDTH)[:LIST_BOX_WIDTH]
+                    lines.append(f" {inner} ")
+
+                for pos in range(start, end):
+                    orig, name = filtered[pos]
+                    mark = "[x] " if orig in chosen else ("[ ] " if multi else "")
+                    inner = f"{pos + 1:>2}. {truncate(mark + name, 68)}".ljust(LIST_BOX_WIDTH)[:LIST_BOX_WIDTH]
+                    if pos == sel:
+                        lines.append(f" {REV}{inner}{RESET} ")
+                    else:
+                        lines.append(f" {inner} ")
+
+                for _ in range(10 - (end - start)):
+                    lines.append(" " * LIST_BOX_WIDTH)
+
+                marks = ("▲" if start > 0 else "") + ("▼" if end < total else "")
+                if multi:
+                    ctl = "[Type] filter | [↩] mark | [F] finish | [Q] back"
+                elif searching:
+                    ctl = "[Type] filter | [⌫] del | [Up/Down] move | [↩] select | [ESC] exit"
+                else:
+                    ctl = "[/] Search | [Up/N] Up | [Down/M] Down | [↩] Select | [Q] Back"
+                if marks:
+                    ctl = f"{ctl} {marks}"
+                inner = (" " + truncate(ctl, LIST_BOX_WIDTH - 1)).ljust(LIST_BOX_WIDTH)[:LIST_BOX_WIDTH]
+                lines.append(f" {DIM}{inner}{RESET} ")
+
+                for line in lines:
+                    print(f"\x1b[2K\r{line}")
+                print(f"\x1b[{len(lines)}A", end="", flush=True)
+                needs_redraw = False
+
+            keys = []
+            for _ in range(5):
+                k = self.check_key_presses()
+                if k is None:
+                    break
+
+                keys.append(k)
+
+            if not keys:
+                time.sleep(0.01)
+                continue
+
+            for key in keys:
+                total = len(filtered)
+                if key == "f" and multi and not searching:
+                    if chosen:
+                        self.click_sound.play()
+                        return sorted(chosen)
+                    continue
+
+                if searching:
+                    if key in ("ESC", "\x1b"):
+                        self.click_sound.play()
+                        searching = False
+                        query = ""
+                        filtered = all_songs
+                        sel, start = 0, 0
+                        needs_redraw = True
+                        continue
+
+                    if key in ("\n", "\r") or (isinstance(key, str) and len(key) == 1 and ord(key) in (10, 13)):
+                        if multi:
+                            if filtered and sel < len(filtered):
+                                self.click_sound.play()
+
+                                o = filtered[sel][0]
+                                if o in chosen:
+                                    chosen.remove(o)
+                                else:
+                                    chosen.add(o)
+
+                                needs_redraw = True
+                            continue
+
+                        if filtered and sel < len(filtered):
+                            self.click_sound.play()
+                            return filtered[sel][0]
+                        
+                        continue
+
+                    if key in ("\x08", "\x7f"):
+                        self.click_sound.play()
+                        query = query[:-1]
+                        refilter()
+                        continue
+
+                    if key == "UP" or key == "DOWN":
+                        if key == "DOWN" and sel < total - 1:
+                            sel += 1
+                            if sel >= end:
+                                start += 1
+
+                            needs_redraw = True
+                            last = time.monotonic()
+
+                        elif key == "UP" and sel > 0:
+                            sel -= 1
+                            if sel < start:
+                                start -= 1
+
+                            needs_redraw = True
+                            last = time.monotonic()
+                        
+                        continue
+
+                    if key in ("LEFT", "RIGHT"):
+                        continue
+
+                    if isinstance(key, str) and len(key) == 1 and 32 <= ord(key) <= 126:
+                        self.click_sound.play()
+                        query += key
+                        refilter()
+                        continue
+
+                    continue
+
+                if key in ("q", "`"):
+                    self.click_sound.play()
+                    self.hard_clear_screen()
+                    return None
+
+                if key == "/":
+                    self.click_sound.play()
+                    searching = True
+                    query = ""
+                    caret = True
+                    last = time.monotonic()
+                    filtered = all_songs
+                    sel, start = 0, 0
+                    needs_redraw = True
+                    continue
+
+                if key in ("m", "DOWN"):
+                    if sel < total - 1:
+                        sel += 1
+                        if sel >= end:
+                            start += 1
+
+                        needs_redraw = True
+                    continue
+
+                if key in ("n", "UP"):
+                    if sel > 0:
+                        sel -= 1
+                        if sel < start:
+                            start -= 1
+
+                        needs_redraw = True
+                    continue
+
+                if key in ("\n", "\r") or (isinstance(key, str) and len(key) == 1 and ord(key) in (10, 13)):
+                    if multi:
+                        if filtered and sel < len(filtered):
+                            self.click_sound.play()
+                            o = filtered[sel][0]
+
+                            if o in chosen:
+                                chosen.remove(o)
+                            else:
+                                chosen.add(o)
+
+                            needs_redraw = True
+                        continue
+
+                    if filtered and sel < len(filtered):
+                        self.click_sound.play()
+                        return filtered[sel][0]
+
+                    continue
+
+
+    def select_playlist(self, player, playlist, song_time, current_index): # line 598
+        names = get_playlists()
+        if not names:
             self.hard_clear_screen()
-            self.enable_cbreak()
+            print("No playlists found.")
+
+            time.sleep(1)
+            self.hard_clear_screen()
             return player, song_time, playlist, current_index
 
-        if not playlist_index.isdigit() or int(playlist_index) >= len(playlists_list):
-            print("Invalid selection. Returning to player...")
-            time.sleep(0.5)
+        res = self._searchable_pick("SELECT A PLAYLIST", names, multi=False)
+        if res is None:
             self.hard_clear_screen()
-            self.enable_cbreak()
             return player, song_time, playlist, current_index
 
-        if not getattr(songs_path, playlists_list[int(playlist_index)]):
-            print("That playlist is empty. Returning to player...")
+        new_playlist = getattr(songs_path, names[res])
+
+        if not new_playlist:
+            self.hard_clear_screen()
+            print("That playlist is empty :( Returning to player...")
             time.sleep(0.5)
             self.hard_clear_screen()
-            self.enable_cbreak()
             return player, song_time, playlist, current_index
 
         player.stop()
-
-        self.name_of_playlist = playlists_list[int(playlist_index)]
-        new_playlist = getattr(songs_path, self.name_of_playlist)
-        current_song_index = 0
-        current_song = new_playlist[current_song_index]
-
-        new_song_name = current_song.split("/")[-1]
+        self.name_of_playlist = names[res]
+        current_song = new_playlist[0]
+        new_song_name = _song_name(current_song)
         new_player = vlc.MediaPlayer(current_song)
-
         new_player.audio_set_volume(self.volume_level * 10)
         new_player.play()
 
         if not self.wait_for_song_length(new_player):
-            new_song_name = new_song_name + " (could not load)"
+            new_song_name = new_song_name + " (could not load) :("
 
         new_song_time = max(0, new_player.get_length()) / 1000
         self.reset(new_song_name)
-
         self.hard_clear_screen()
-        self.enable_cbreak()
-
         return new_player, new_song_time, new_playlist, 0
 
     def select_songs(self, player, playlist, song_time, current_index):
-        self.hard_clear_screen()
-
-        start = current_index - 5
-        end = current_index + 5
-        select_index = current_index
-        temp_select_list = []
-        for song in playlist:
-            temp_select_list.append(song.split("/")[-1])
-
-        while True:
+        names = [_song_name(s) for s in playlist]
+        res = self._searchable_pick(None, names, multi=False)
+        
+        if res is None:
             self.hard_clear_screen()
-
-            if start >= len(temp_select_list) - 10:
-                start = max(0, len(temp_select_list) - 10)
-            elif start <= 0:
-                start = 0
-
-            if end >= len(temp_select_list):
-                end = len(temp_select_list)
-            elif end <= 10:
-                end = min(10, len(temp_select_list))
-
-            safe_end = min(end, len(temp_select_list))
-
-            for line_index in range(start, safe_end):
-                song_name = temp_select_list[line_index]
-
-                if line_index == select_index:
-                    print(f"\x1b[2K\r        > {song_name} <")
-                else:
-                    print(f"\x1b[2K\r  {song_name}  ")
-            print("")
-            print("[Up/N] Up | [Down/M] Down | [Enter] Play | [Q] Back")
-            print(f"\x1b[{safe_end - start}A", end="", flush=True)
-            print(f"")
-
-            key = self.check_key_presses()
-
-            if key == "s":
-                pass
-
-            if key == 'q':
-                self.click_sound.play()
-                break
-
-            if key == 'm' or key == 'DOWN':
-                self.click_sound.play()
-                if select_index < len(temp_select_list) - 1:
-                    select_index += 1
-                    if start < len(temp_select_list) - 10 and select_index > start:
-                        start += 1
-                        end += 1
-
-            if key == 'n' or key == 'UP':
-                self.click_sound.play()
-                if select_index > 0:
-                    select_index -= 1
-                    if select_index < start:
-                        start -= 1
-                        end -= 1
-
-            if key in ('\n', '\r') or (key and len(key) == 1 and ord(key) in (10, 13)):
-                self.hard_clear_screen()
-                player, song_time, select_index = self.song_player(player, select_index, playlist)
-                return player, song_time, playlist, select_index
-
-            time.sleep(0.1)
-
+            return player, song_time, playlist, current_index
+        
         self.hard_clear_screen()
-        return player, song_time, playlist, current_index
-
+        player, song_time, res = self.song_player(player, res, playlist)
+        return player, song_time, playlist, res
 
     def select_song_list(self, song_paths, multi, title, select_index=0):
-        self.hard_clear_screen()
-
-        temp_select_list = []
-        for song in song_paths:
-            temp_select_list.append(song.split("/")[-1])
-
-        chosen_list = []
-
-        while True:
+        names = [_song_name(s) for s in song_paths]
+        res = self._searchable_pick(title, names, multi=multi)
+        
+        if res is None:
             self.hard_clear_screen()
-
-            start = max(0, min(select_index - 5, len(temp_select_list) - 10))
-            end = min(start + 10, len(temp_select_list))
-
-            print(f"\x1b[2K\r{title}")
-            print("")
-
-            for line_index in range(start, end):
-                song_name = temp_select_list[line_index]
-
-                if multi:
-                    if line_index in chosen_list:
-                        song_name = f"[x] {song_name}"
-                    else:
-                        song_name = f"[ ] {song_name}"
-
-                if line_index == select_index:
-                    print(f"\x1b[2K\r        > {song_name} <")
-                else:
-                    print(f"\x1b[2K\r  {song_name}  ")
-            print("")
-
-            if multi:
-                print(f"Selected: {len(chosen_list)}")
-                print("[N] Up | [M] Down | [Enter] Mark/Unmark | [F] Finish | [Q] Back")
-            else:
-                print("[N] Up | [M] Down | [Enter] Select | [Q] Back")
-
-            key = self.check_key_presses()
-
-            if key == 'q':
-                self.click_sound.play()
-                return None
-
-            if key == 'm' or key == 'DOWN':
-                self.click_sound.play()
-                if select_index < len(temp_select_list) - 1:
-                    select_index += 1
-
-            if key == 'n' or key == 'UP':
-                self.click_sound.play()
-                if select_index > 0:
-                    select_index -= 1
-
-            if key in ('\n', '\r') or (key and len(key) == 1 and ord(key) in (10, 13)):
-                self.click_sound.play()
-                if multi:
-                    if select_index in chosen_list:
-                        chosen_list.remove(select_index)
-                    else:
-                        chosen_list.append(select_index)
-                else:
-                    return [select_index]
-
-            if key == 'f' and multi:
-                if chosen_list:
-                    self.click_sound.play()
-                    return chosen_list
-                else:
-                    print("Please select at least one song first.")
-                    time.sleep(1)
-
-            time.sleep(0.1)
+            return None
+        
+        self.hard_clear_screen()
+        if multi:
+            return res
+        
+        return [res]
 
     def create_virtual_playlist(self):
         self.disable_cbreak(self.old_settings)
@@ -809,7 +956,8 @@ class UiWidgets:
             self.hard_clear_screen()
             self.enable_cbreak()
             return
-
+        if " " in user_directory_name:
+            user_directory_name = user_directory_name.replace(" ", "_")
         if not is_valid_playlist_name(user_playlist_name):
             print("Playlist name can only use letters, numbers and underscores, and can't start with a number.")
             time.sleep(1.5)
@@ -842,6 +990,7 @@ class UiWidgets:
             create_virtual_playlist_in_songs_path(user_playlist_name, chosen_songs)
             time.sleep(1)
             self.hard_clear_screen()
+            self.enable_cbreak()
 
     def force_import_loop(self):
         while get_playlists() == []:
@@ -871,7 +1020,7 @@ class UiWidgets:
         new_playlist = getattr(songs_path, name_of_playlist)
         current_song = new_playlist[0]
 
-        new_song_name = current_song.split("/")[-1]
+        new_song_name = _song_name(current_song)
         new_player = vlc.MediaPlayer(current_song)
 
         new_player.audio_set_volume(self.volume_level * 10)
@@ -885,37 +1034,18 @@ class UiWidgets:
 
         return new_player, new_song_time, new_playlist, 0
 
-    def delete_playlist_prompt(self, player, playlist, song_time, current_index):
-        self.disable_cbreak(self.old_settings)
+    def delete_playlist_prompt(self, player, playlist, song_time, current_index): # line 904
+        self.enable_cbreak()
         self.hard_clear_screen()
 
-        playlists_list = get_playlists()
+        names = get_playlists()
+        res = self._searchable_pick("DELETE A PLAYLIST", names, multi=False)
 
-        print("+==================================+")
-        print("          DELETE A PLAYLIST         ")
-        print("+==================================+")
-
-        for index in range(0, len(playlists_list)):
-            print(f"{index}. {playlists_list[index]}")
-
-        print("\nPlease enter the number next to the playlist you want to delete: ")
-        playlist_index = input("").strip()
-
-        if playlist_index == "`":
-            print("Returning back...")
-            time.sleep(0.5)
+        if res is None:
             self.hard_clear_screen()
-            self.enable_cbreak()
             return player, song_time, playlist, current_index
-
-        if not playlist_index.isdigit() or int(playlist_index) >= len(playlists_list):
-            print("Invalid selection. Returning to player...")
-            time.sleep(0.5)
-            self.hard_clear_screen()
-            self.enable_cbreak()
-            return player, song_time, playlist, current_index
-
-        delete_name = playlists_list[int(playlist_index)]
+        
+        delete_name = names[res]
 
         print(f"Delete playlist '{delete_name}'? Your music files will not be deleted.")
         answer = input("Type y to confirm: ").strip().lower()
@@ -961,6 +1091,7 @@ class UiWidgets:
 
     def delete_song_prompt(self, player, playlist, song_time, current_index):
         if is_folder_playlist(self.name_of_playlist):
+            self.hard_clear_screen()
             print("This playlist stays in sync with its folder, so songs can't be removed here.")
             print("Only virtual playlists can be edited.")
             time.sleep(2)
@@ -974,7 +1105,7 @@ class UiWidgets:
             return player, song_time, playlist, current_index
 
         delete_index = chosen_list[0]
-        song_name = playlist[delete_index].split("/")[-1]
+        song_name = _song_name(playlist[delete_index])
 
         self.disable_cbreak(self.old_settings)
         self.hard_clear_screen()
@@ -1014,6 +1145,7 @@ class UiWidgets:
 
     def import_single_song_prompt(self, playlist):
         if is_folder_playlist(self.name_of_playlist):
+            self.hard_clear_screen()
             print("This playlist stays in sync with its folder, so songs can't be added here.")
             print("Only virtual playlists can be edited.")
             time.sleep(2)
@@ -1099,9 +1231,7 @@ class UiWidgets:
             index = 0
         song_path = playlist[index]
 
-        path_parts = song_path.split('/')
-        file_name_with_extension = path_parts[-1]
-        song_name = file_name_with_extension
+        song_name = _song_name(song_path)
 
         new_player = vlc.MediaPlayer(song_path)
         new_player.audio_set_volume(self.volume_level * 10)

@@ -2,7 +2,9 @@ import { useState , useEffect, useRef} from 'react'
 import { useNavigate} from 'react-router-dom'
 import {set_login_status} from './data.jsx'
 import {supabase} from './main.jsx'
-
+import show from "./assets/showpass.png"
+import hide from "./assets/hidepass.png"
+const supabaseUsernameRegex = /^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*$/;
 //MY BELOVED TOASTER
 import toast from 'react-hot-toast';
 
@@ -10,8 +12,15 @@ export default function signup(){
     const Navigate = useNavigate()
     const [name, setName] = useState("")
     const [password, setPassword] = useState("")
+    const [passimg, setPassImg] = useState(false)
     async function submit(e) { 
         e.preventDefault(); 
+        const isValid = supabaseUsernameRegex.test(name)
+        if (!isValid){
+            toast.error("Sorry. No spaces, '@' or leading/trailing periods allowed")
+            return
+        } 
+
         // DB CODE
         const real_username = name + "@gmail.com"
         try{
@@ -22,7 +31,7 @@ export default function signup(){
                 }
             )
             if (error) throw error
-            toast.success("Accound already exists. logging you in!")
+            toast.success("Account already exists. logging you in!")
             set_login_status(true)
             console.log("ERM WHAT THE SIGMA")
             setTimeout(()=>{Navigate("/dashboard")},[1000])
@@ -47,7 +56,7 @@ export default function signup(){
     }
     return(
         <div className = "container">
-            <p> Sign Up! </p>
+            <p className = "los" > Sign Up! </p>
             <form className = "form" onSubmit = {submit}>
                 <input 
                 placeholder = "name"
@@ -55,16 +64,21 @@ export default function signup(){
                 minLength = "6"
                 onChange =  {(e) => {setName(e.target.value)}}
                 />
-                <input 
-                placeholder = "password"
-                maxLength = "18"
-                minLength = "6"
-                type = "password"
-                onChange = {(e) => {setPassword(e.target.value)}}
-                />
-                <button type = "submit"> Submit! </button>
+                <div className = "columner">
+                    <div style = {{paddingLeft: "50px", gap: "8px"}}className = "row"> 
+                        <input 
+                        placeholder = "password"
+                        maxLength = "18"
+                        minLength = "6"
+                        type = "password"
+                        onChange = {(e) => {setPassword(e.target.value)}}
+                        />
+                        <button type = "button" className = "special_button" onClick = {() => setPassImg(!passimg)}> <img src = {passimg? show: hide } alt = "show password" /> </button>
+                    </div>
+                    <p> {passimg?`${password}`:""}</p> 
+                </div>
+                <button style = {{backgroundColor: "rgb(140, 8, 8)", color: "white"}} type = "submit"> Submit! </button>
             </form>
-            <p> {`Name ${name} Password ${password}`}</p>
             <button onClick = {() => Navigate("/login")}> Login </button>
         </div>
     );

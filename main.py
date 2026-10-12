@@ -1,12 +1,7 @@
 import json
 import os
 import sys
-
-# stderr_fd = sys.stderr.fileno()
-# devnull = os.open(os.devnull, os.O_WRONLY)
-# os.dup2(devnull, stderr_fd)
-# os.close(devnull)
-
+import json
 import time
 try:
     import vlc
@@ -15,11 +10,18 @@ except (ImportError, OSError):
     sys.exit(1)
 import widgets
 import songs_path
-from import_system import append_folder_to_songs_path
+from import_system import append_folder_to_songs_path, get_playlists
 import re
 import importlib
 from pathlib import Path
 
+if os.name == "nt":
+    os.system("")
+if os.name != "nt" or os.name != "win32":
+    stderr_fd = sys.stderr.fileno()
+    devnull = os.open(os.devnull, os.O_WRONLY)
+    os.dup2(devnull, stderr_fd)
+    os.close(devnull)
 def sync_playlists_with_folders():
     valid_exts = {'.mp3', '.wav', '.flac', '.m4a', '.ogg'}
 
@@ -75,12 +77,8 @@ def sync_playlists_with_folders():
 
         time.sleep(2)
 
-
-sync_playlists_with_folders()
-
-with open("songs_path.py", "r") as song:
-    if not song.read().strip():
-        while True:
+if not get_playlists():
+    while True:
             print("\033[H\033[2J", end="", flush=True)
             print("+=======================================================================+")
 
@@ -97,12 +95,14 @@ with open("songs_path.py", "r") as song:
             if "" != user_directory and "" != user_directory_name:
                 answer = append_folder_to_songs_path(user_directory, user_directory_name)
                 if answer:
-                    print("Playlist saved! Please rerun the script to load your music.")
+                    print("Playlist saved! Loading...")
                     print("\033[H\033[2J", end="", flush=True)
                     break
                 else:
                     print("Playlist not saved! Please try again")
                     time.sleep(1.5)
+
+sync_playlists_with_folders()
 
 playlists_list = []
 
