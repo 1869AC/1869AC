@@ -204,8 +204,9 @@ https://thepillu.site
 ---
 
 * Ai was not used in generating any of the core concepts that are currently featured in this project. 
-* Howver one file that is not being implemented right now that was for themes is AI generated. It is under temporary py files!
+* However one file that is not being implemented right now that was for themes is AI generated. It is under temporary py files! This is a file we haven't used at the moment and all current themes are NOT AI generated though!
 * Ai was not used in generating any of our media and art as well! 
+* AI was used in debugging code! 
 
 ## Learning
 ---
