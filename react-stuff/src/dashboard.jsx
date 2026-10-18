@@ -6,25 +6,10 @@ import { useNavigate} from 'react-router-dom'
 import toast from 'react-hot-toast';
 const MREOW = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/$/, "")
 const mode =  localStorage.getItem("mode") || "guest"
-
-const playlist_array = [
-    ["song", "path", "./assets/cover.PNG"],
-    ["othersong", "path2", "./assets/cover.PNG"], 
-    ["how usefless", "path3", "./assets/cover.PNG"], 
-    ["beautiful", "path4", "./assets/cover.PNG"],
-    ["song", "path", "./assets/cover.PNG"],
-    ["othersong", "path2", "./assets/cover.PNG"], 
-    ["how usefless", "path3", "./assets/cover.PNG"], 
-    ["beautiful", "path4", "./assets/cover.PNG"],
-    ["song", "path", "./assets/cover.PNG"],
-    ["othersong", "path2", "./assets/cover.PNG"], 
-    ["how usefless", "path3", "./assets/cover.PNG"], 
-    ["beautiful", "path4", "./assets/cover.PNG"]
-];
-
 function Playlists({ifSlice, playlists}){//obj
     const new_array = ifSlice? playlists.slice(0,8):playlists 
     {/* PLS ADD PLAYLIST EXTRACTION LOGIC!*/}
+    console.log(new_array)
     if(new_array.length === 0){
         return (<p> No playlists! Go and make one!</p>)
     }
@@ -56,62 +41,60 @@ export default function Dashboard(){
                 const response = await fetch(
                     `${MREOW}/GIMMETHOSESONGS/0`
                 );
-                toast.success("noot 1 ")
                 if (!response.ok){
                     throw new Error("COULD NOT LOAD PLAYLIST UNO")
                 }
-                toast.success("noot 2 ")
                 //ERROR
                 const data = await response.json()
-                toast.success("noot 3?? ")
                 if (!Array.isArray(data)){
+                    console.log(data)
                     //ERROR HOW IS THIS HAPPENING?
                     throw new Error("yeah this ones never happening?")
                 }
-                toast.success("noot 4?? ")
                 setPlaylists(data);
             }catch(e){
-                toast.error("FAT" + e.message) //ERROR HERE DOC TYPE THINGY.
+                toast.error(e.message) //ERROR HERE DOC TYPE THINGY.
             }
         }
         // AUTH
         async function fetcher() { 
+            let user 
             try{
-                const {response, error} = await supabase.auth.getUser()
+                const {data, error} = await supabase.auth.getUser()
                 if (error){
-                    toast.error("FAT" + error.message)
+                    toast.error(error.message)
                     return;
-                }
-                if (!response.data.user || !response.data ){
+                } 
+                if (!data.user || !data ){
                     // well dang how did you get here??
                     Navigate('/signup')
                     toast.error("HOW DID YOU GET HERE?!")
                     return
                 }
+                user = data.user
             }catch(e){
                 toast.error(e)
             }
-            const {response2, error2} = await supabase.from("users").select("songs").eq("id", user.id).maybeSingle(); 
-            if(error){
-                toast.error("FAT" + error.message)
+            const {data, error2} = await supabase.from("users").select("songs").eq("id", user.id).maybeSingle(); 
+            if(error2){
+                toast.error(error.message)
                 return;
             }
-            if (response2.data && response2.data.songs){
-                setPlaylists(formattedSongs)
+            if (data && data.songs){
+                const songs = data.songs;
+                if (Array.isArray(songs)){
+                    setPlaylists(songs)
+                }else{
+                    setPlaylists([]);
+                    toast.error("will also nv happen")
+                }
             }
         }
-
         //CALL MY BS
-        if(mode == "guest"){
-            guestFetcher()
-        }
-        else{
-            fetcher()
-        }
+        fetcher()
     }, []);
     return(
         <div className = "container">
-            <h1> THIS SITE IS EXPERIMENTAL. INFERFACE ON THIS PAGE DOES NOT WORK AT THE MOMENT!</h1>
             <div className = "menu_row">
                 <p> Playlists </p>
                 <button style ={{color: "white", backgroundColor: "MediumSeaGreen", transform: "scale(1.5)", marginBottom: "3em"}} onClick = {toggle}> {!all? "Show all": "Condense"}</button>
@@ -122,15 +105,14 @@ export default function Dashboard(){
                 playlists = {playlists}
                 />
            </div>
-           <div className = "custom playlists">
-                {/* AUTO GENERATED MINI PLAYLISTS WITH SIMILAR VIBES */}
-           </div>
            <div>
-                {/* ADD PLAYLIST*/}
-                <button onClick = {() => {newplaylist()}}> <img className = "small" src = {plus} /> </button>
+            <button onClick = {playsong()}> Play songs online instead! </button>
            </div>
         </div>
     );
+    function playsong(){
+        
+    }
     function toggle(){ 
         setAll(prev=> !prev)
     }

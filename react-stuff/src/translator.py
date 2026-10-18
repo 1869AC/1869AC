@@ -7,7 +7,9 @@ import songs_path
 from fastapi import FastAPI, HTTPException #creates server + allows to return errers 404 
 from fastapi.responses import FileResponse #sends files to browsert
 from fastapi.middleware.cors import CORSMiddleware
+from widgets import get_cur_song
 
+cursong = get_cur_song()
 
 app = FastAPI() #uses the import to make a python server w Uvicorn
 app.add_middleware(
@@ -36,10 +38,11 @@ def give_playlists(index:int):
     playlist_names = list(playlists.keys())
     if int(index) <0 or int(index) >= len(playlist_names):
         raise HTTPException(status_code= 6767, detail = "ERROR GETTING SONG!")
-    return{
-        "name": playlist_names[int(index)],
-        "songs": playlists[playlist_names[int(index)]]
-    }
+    #return{
+    #    "name": playlist_names[int(index)],
+    #    "songs": playlists[playlist_names[int(index)]]
+    #}
+    return playlist_names
 
 @app.get("/PLAYSONG/{playlist_index}/{song_index}")
 def play(playlist_index,song_index):

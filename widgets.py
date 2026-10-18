@@ -35,6 +35,11 @@ DIM = "\033[2m"
 REV = "\033[7m"
 RESET = "\033[0m"
 
+current_song = new_playlist[0]
+
+def get_cur_song():
+    return current_song
+
 def truncate(text, max_width):
     return text if len(text) <= max_width else text[:max_width - 3] + "..."
 
