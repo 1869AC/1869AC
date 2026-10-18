@@ -42,6 +42,13 @@ def give_playlists(index:int):
 @app.get("/PLAYSONG/{playlist_index}/{song_index}")
 def play(playlist_index:int,song_index:int):
     playlist_names = list(playlists.keys())
+
+    print("Playlists", repr(playlists))
+    print("Names", repr(playlist_names))
+    print("PLaylist index", playlist_index)
+    print("Song index", song_index)
+
+
     if playlist_index <0 or playlist_index >= len(playlist_names):
         raise HTTPException(status_code= 101, detail = "ERROR PLAYLIST!")
     playlist_name = playlist_names[playlist_index]
@@ -101,14 +108,27 @@ def sendsession(session):
         if not result.data:
             raise HTTPException(status_code= 401, detail = "user does not exist")
         songs = result.data[0].get("songs") or []
-        playlists = {
-            playlist["name"]: playlist["songs"]
-            for playlist in songs
-            is isinstance(playlist, dict)
-            and "name" in playlist 
-            and "songs" in playlist
-        }
-        print(playlists)
+        playlist_dos = {}
+        #SONG FOLDER TO SONGS INDIVIDUAL
+        for playlist in songs: 
+            print("MADE IT")
+            if isinstance(playlist, dict) and "name" in playlist and "dir" in playlist:
+                print("VALID")
+                folder = Path(playlist["dir"])
+                print("WHAT?")
+                if not folder.is_dir(): 
+                    print("BAD PATH")
+                    return
+                print("meep")
+                playlist_dos[playlist["name"]] = [
+                    str(file)
+                    for file in folder.iterdir()
+                    if file.is_file()
+                    and file.suffix.lower() in allowed_song_types
+                ]
+                print("POPULATED")
+        playlists = playlist_dos
+        print(repr(playlists))
         return {"message": "TEST"}
     except Exception:
         if not response.user or not response: 
@@ -118,10 +138,3 @@ def sendsession(session):
     except Exception as e: 
         print(repr(e))
         raise HTTPException(status_code= 401, detail = "SPECIFIC ERROR")
-
-##response = supabase.auth.get_user()
-##user = response.user
-##if not user: 
-    ##raise HTTPException(status_code= 401, detail = "NOT LOGGED IN??")
-##result = supabase.table("users").select("songs").eq("id", user.id).maybeSingle().execute()
-##playlists = result.data["songs"] if result.data else []
