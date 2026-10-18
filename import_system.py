@@ -29,7 +29,7 @@ def is_folder_playlist(playlist_name):
     pattern = rf"^# Auto-imported playlist from: [^\n]*\n{re.escape(playlist_name)} = \["
     return re.search(pattern, content, re.M) is not None
 
-def append_folder_to_songs_path(folder_path, playlist_name):
+def append_folder_to_songs_path(folder_path, playlist_name, shutup= False):
 
     playlists_list = []
 
@@ -44,8 +44,8 @@ def append_folder_to_songs_path(folder_path, playlist_name):
         return False
 
     if playlist_name in playlists_list:
-        print("This name is already taken please and try something else!")
-
+        if not shutup:
+            print("This name is already taken please and try something else!")
         return False
 
     else:

@@ -3,6 +3,8 @@ import sys
 import os
 import vlc
 import datetime
+from supabaseclient import supabase
+from altmain import get_uid
 from pygame import mixer
 import random
 try:
@@ -552,7 +554,9 @@ class UiWidgets:
             return
 
         if user_directory and user_playlist_name:
+            ##ADD TO SUPABSE TOO!
             self.playlist_added = append_folder_to_songs_path(user_directory, user_playlist_name)
+            response = supabase.table("users").select("songs").eq("id", get_uid()).upsert().execute()
         else:
             print("Directory not found returning back...")
 

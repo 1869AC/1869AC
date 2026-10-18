@@ -33,6 +33,8 @@ allowed_song_types = {
     ".wav": "audio/wav",
     ".flac": "audio/flac",
 }
+def get_uid():
+    return name2
 ##AUTH IMPORTS
 from supabaseclient import supabase
 from auth import account
@@ -103,15 +105,16 @@ if choice.lower() == 'a':
         #user exists need to sync to cloud
         try:
             response = supabase.table("users").select("songs").eq("id", name2).maybe_single().execute()
-            if response is None or response.data is None:
-                jsdoit = True
-            else:
-                ##SONG JSON THERE
+            if response and response.data and "songs" in response.data:
                 playlists_list = response.data["songs"] or []
+                current_playlists = get_playlists()
                 for playlist in playlists_list: 
                     song = playlist["name"]
                     directory = playlist["dir"]
-                    append_folder_to_songs_path(directory, song)
+                    if song in current_playlists:
+                        continue
+                    append_folder_to_songs_path(directory, song, shutup = True)
+                importlib.reload(songs_path)
         except Exception as e:
             print(e)
     elif choice.lower() == 'g':  
@@ -160,21 +163,6 @@ if not get_playlists():
                     time.sleep(1.5)
 
 sync_playlists_with_folders()
-if name2 == "guest":
-    playlists_list = [v for v in dir(songs_path) if not v.startswith("__")]
-else:
-    response = supabase.table("users").select("songs").eq("id", name2).maybe_single().execute()
-    if response and response.data and "songs" in response.data: 
-        playlists_list = response.data["songs"]
-        for playlist in playlists_list:
-            append_folder_to_songs_path(playlist["dir"], playlist["name"], shutup = True)
-        importlib.reload(songs_path)
-    else:
-        print("Something went wrong. try again")
-        sys.exit()
-for variable_name in dir(songs_path):
-    if not variable_name.startswith("__"):
-        playlists_list.append(variable_name)
 
 while True:
     print("+==================================+")
