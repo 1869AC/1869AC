@@ -6,7 +6,6 @@ import { useNavigate} from 'react-router-dom'
 import toast from 'react-hot-toast';
 const MREOW = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/$/, "")
 const mode =  localStorage.getItem("mode") || "guest"
-
 function url(path){ 
     return new URL(path, import.meta.url).href; // turns the path into a web url
 }
@@ -15,6 +14,7 @@ export default function Dashboard(){
     const [playlists, setPlaylists] = useState([])
     const Navigate = useNavigate()
     const [song, setSong] = useState(null);
+    const [loading, setLoading] = useState(true);
 
 
     function Playlists({ifSlice, playlists}){//obj
@@ -28,7 +28,7 @@ export default function Dashboard(){
                 {new_array.map((playlist, index)=> {
                 return(
                     <div key = {index}>
-                        <button onClick ={() => playSpecific(index)}> Play</button>
+                        <button disabled = {loading} onClick ={() => playSpecific(index)}> Play</button>
                         <p>{playlist.name}</p>
                     </div>
                 );
@@ -124,15 +124,37 @@ export default function Dashboard(){
                 }
             }
         }
-        //CALL MY BS
-        fetcher()
+    async function loginSync(path, options){
+        try{
+            const {data, error} = await supabase.auth.getSession()
+            if (error){
+                throw new Error(error.message)
+            }
+            if (!data.session || !data){
+                Navigate('/signup')
+                throw new Error("How did you get here!?")
+            }
+            const response = await fetch(
+                `${MREOW}/SENDSESSION/${data.session.access_token}`
+            );
+            if (!response.ok){
+                throw new Error(`err loading songs ${response.status}`)
+            }
+        }catch(e){
+            toast.error(e.message)
+        }
+    }
+       //CALL MY BS
+        fetcher();
+        loginSync();
+        setLoading(false); 
     }, []);
     const [text, setText] = useState(true)
     return(
         <div className = "container">
             <div className = "menu_row">
                 <p> Playlists </p>
-                <button style ={{color: "white", backgroundColor: "MediumSeaGreen", transform: "scale(1.5)", marginBottom: "3em"}} onClick = {toggle}> {!all? "Show all": "Condense"}</button>
+                <button disabled = {loading} style ={{color: "white", backgroundColor: "MediumSeaGreen", transform: "scale(1.5)", marginBottom: "3em"}} onClick = {toggle}> {!all? "Show all": "Condense"}</button>
             </div>
            <div className = "playlists">
                 <Playlists 
@@ -141,7 +163,7 @@ export default function Dashboard(){
                 />
            </div>
            <div>
-            <button onClick = {playsong}> {text? "OFF" : "ON"} </button>
+            <button disabled = {loading} onClick = {playsong}> {text? "OFF" : "ON"} </button>
             <p> (By default it tries to play what you were last listening on the terminal! Since that's not always possible sometimes it plays nothing!)</p>
             <audio
                 key = {song? `${song.playlist_index}/${song.song_index}`: "huh"}

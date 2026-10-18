@@ -25,14 +25,7 @@ allowed_song_types = {
     ".wav": "audio/wav",
     ".flac": "audio/flac",
 }
-response = supabase.auth.get_user()
-user = response.user
-if not user: 
-    raise HTTPException(status_code= 401, detail = "NOT LOGGED IN??")
-result = supabase.table("users").select("songs").eq("id", user.id).maybeSingle().execute()
-playlists = result.data["songs"] if result.data else []
-
-
+playlists = {}
 ##NAMES
 @app.get("/GIMMETHOSESONGS/{index}")
 def give_playlists(index:int): 
@@ -94,3 +87,41 @@ def get_all_songs(playlist_index:int):
         "length": len(playlist_songs),
     }
 
+##GET ALL SONGS 
+@app.get("/SENDSESSION/{session}")
+def sendsession(session): 
+    global playlists
+    try:
+        response = supabase.auth.get_user(session)
+        user = response.user
+        if not user: 
+            raise HTTPException(status_code= 401, detail = "NOT LOGGED IN??")
+        supabase.postgrest.auth(session)
+        result = supabase.table("users").select("songs").eq("id", user.id).execute()
+        if not result.data:
+            raise HTTPException(status_code= 401, detail = "user does not exist")
+        songs = result.data[0].get("songs") or []
+        playlists = {
+            playlist["name"]: playlist["songs"]
+            for playlist in songs
+            is isinstance(playlist, dict)
+            and "name" in playlist 
+            and "songs" in playlist
+        }
+        print(playlists)
+        return {"message": "TEST"}
+    except Exception:
+        if not response.user or not response: 
+            raise HTTPException(status_code= 404, detail = "ERROR SYNCING LOGIN!")
+    except HTTPException: 
+        raise
+    except Exception as e: 
+        print(repr(e))
+        raise HTTPException(status_code= 401, detail = "SPECIFIC ERROR")
+
+##response = supabase.auth.get_user()
+##user = response.user
+##if not user: 
+    ##raise HTTPException(status_code= 401, detail = "NOT LOGGED IN??")
+##result = supabase.table("users").select("songs").eq("id", user.id).maybeSingle().execute()
+##playlists = result.data["songs"] if result.data else []
