@@ -6,34 +6,70 @@ import { useNavigate} from 'react-router-dom'
 import toast from 'react-hot-toast';
 const MREOW = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/$/, "")
 const mode =  localStorage.getItem("mode") || "guest"
-function Playlists({ifSlice, playlists}){//obj
-    const new_array = ifSlice? playlists.slice(0,8):playlists 
-    {/* PLS ADD PLAYLIST EXTRACTION LOGIC!*/}
-    if(new_array.length === 0){
-        return (<p> No playlists! Go and make one!</p>)
-    }
-        return(
-        <>
-            {new_array.map((playlist, index)=> {
-            return(
-                <div key = {index}>
-                    <p>{playlist.name}</p>
-                </div>
-            );
-            })}
-        </>
-        );
-}
+
 function url(path){ 
     return new URL(path, import.meta.url).href; // turns the path into a web url
 }
 export default function Dashboard(){
+    const [length, setLength] = useState(0)
+    const [index, setIndex] = useState(0)
     const [all, setAll] = useState(false)
     const [playlists, setPlaylists] = useState([])
     const Navigate = useNavigate()
-    const [loading, setLoading] = useState(true);
-    const [selected, setSelected] = useState(null);
     const [song, setSong] = useState(null);
+
+    
+    function Playlists({ifSlice, playlists}){//obj
+        const new_array = ifSlice? playlists.slice(0,8):playlists 
+        {/* PLS ADD PLAYLIST EXTRACTION LOGIC!*/}
+        if(new_array.length === 0){
+            return (<p> No playlists! Go and make one!</p>)
+        }
+            return(
+            <>
+                {new_array.map((playlist, index)=> {
+                return(
+                    <div key = {index}>
+                        <button onClick = {playSpecific}> Play</button>
+                        <p>{playlist.name}</p>
+                    </div>
+                );
+                })}
+            </>
+            );
+    }
+    async function nextSong(length){
+    //NEXT!
+        setIndex(current => {
+           if (current >= length){
+            //okay thats enough
+            return
+           }
+           //increment like usual
+           current + 1
+        });
+    }
+    async function playSpecific(playlist_number){
+        try{
+            const response = await fetch(
+                `${MREOW}/GIMMETHOSESONGS/0`
+            );
+            if (!response.ok){
+                throw new Error("err loading song")
+            }
+            const curSong = await response.json()
+            console.log(curSong)
+            setSong({
+                playlist_index: curSong[playlist_number],
+                song_index: index 
+            });
+            setLength(curSong[playlist_number].length)
+        }catch(e){
+            console.log("ERROR")
+            console.log(e)
+            toast.error(e.message)
+        }
+    }
     useEffect(() => { 
         //GUEST
         async function guestFetcher(){
@@ -111,6 +147,8 @@ export default function Dashboard(){
             <audio
                 key = {song}
                 controls //turns on
+                autoPlay
+                onEnded = {nextSong}
                 src = {
                     song != null? `${MREOW}/PLAYSONG/${song.playlist_index}/${song.song_index}` : undefined
                 }
