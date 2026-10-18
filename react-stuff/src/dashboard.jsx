@@ -11,14 +11,12 @@ function url(path){
     return new URL(path, import.meta.url).href; // turns the path into a web url
 }
 export default function Dashboard(){
-    const [length, setLength] = useState(0)
-    const [index, setIndex] = useState(0)
     const [all, setAll] = useState(false)
     const [playlists, setPlaylists] = useState([])
     const Navigate = useNavigate()
     const [song, setSong] = useState(null);
 
-    
+
     function Playlists({ifSlice, playlists}){//obj
         const new_array = ifSlice? playlists.slice(0,8):playlists 
         {/* PLS ADD PLAYLIST EXTRACTION LOGIC!*/}
@@ -30,7 +28,7 @@ export default function Dashboard(){
                 {new_array.map((playlist, index)=> {
                 return(
                     <div key = {index}>
-                        <button onClick = {playSpecific}> Play</button>
+                        <button onClick ={() => playSpecific(index)}> Play</button>
                         <p>{playlist.name}</p>
                     </div>
                 );
@@ -38,35 +36,36 @@ export default function Dashboard(){
             </>
             );
     }
-    async function nextSong(length){
+    function nextSong(){
     //NEXT!
-        setIndex(current => {
-           if (current >= length){
-            //okay thats enough
-            return
+        setSong(current => {
+            if (current === null){
+                return
+            }
+           return{
+                ...current, 
+                song_index: current.song_index + 1 //replace this one
            }
-           //increment like usual
-           current + 1
         });
     }
     async function playSpecific(playlist_number){
         try{
             const response = await fetch(
-                `${MREOW}/GIMMETHOSESONGS/0`
+                `${MREOW}/ALLSONGS/${playlist_number}`
             );
             if (!response.ok){
-                throw new Error("err loading song")
+                throw new Error(`err loading songs ${response.status}`)
             }
-            const curSong = await response.json()
-            console.log(curSong)
+            const data = await response.json()
+            const playlistSongs = data.songs //get js song names
+            if(!Array.isArray(playlistSongs) || playlistSongs == null || !playlistSongs || playlistSongs === 0 ){
+                throw new Error("Empty Playlist!")
+            }
             setSong({
-                playlist_index: curSong[playlist_number],
-                song_index: index 
+                playlist_index: playlist_number,
+                song_index: 0 
             });
-            setLength(curSong[playlist_number].length)
         }catch(e){
-            console.log("ERROR")
-            console.log(e)
             toast.error(e.message)
         }
     }
@@ -142,10 +141,10 @@ export default function Dashboard(){
                 />
            </div>
            <div>
-            <button onClick = {playsong}> {text? "Play Songs" : "Turn Off Songs"} </button>
+            <button onClick = {playsong}> {text? "OFF" : "ON"} </button>
             <p> (By default it tries to play what you were last listening on the terminal! Since that's not always possible sometimes it plays nothing!)</p>
             <audio
-                key = {song}
+                key = {song? `${song.playlist_index}/${song.song_index}`: "huh"}
                 controls //turns on
                 autoPlay
                 onEnded = {nextSong}
@@ -158,16 +157,16 @@ export default function Dashboard(){
     );
     async function playsong(){
         console.log("CLCK")
-            if(text == true){
+            if(text == false){
                 console.log("OFFLINE")
                 //online make it offline
-                setText(false)
+                setText(true)
                 setSong(null)
                 return
             }
             try{
                 console.log("ONLINE")
-                setText(true)
+                setText(false)
                 console.log("HI?")
                 const response = await fetch(`${MREOW}/NAMEOFSTUPIDSONG/`);
                 if (!response.ok){
