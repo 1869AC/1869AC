@@ -14,7 +14,7 @@ from widgets import get_cur_song
 app = FastAPI() #uses the import to make a python server w Uvicorn
 app.add_middleware(
     CORSMiddleware,
-    allow_origins = ["http://localhost:8000","http://localhost:5173"], 
+    allow_origins = ["http://localhost:8000","http://localhost:5174"], 
     allow_methods = ["*"], 
     allow_headers = ["*"], 
 )
@@ -138,3 +138,15 @@ def sendsession(session):
     except Exception as e: 
         print(repr(e))
         raise HTTPException(status_code= 401, detail = "SPECIFIC ERROR")
+
+@app.post("/LOGOUT/{session}")
+def logout(session):
+    global playlists
+    playlists.clear()
+    response = supabase.auth.get_user(session)
+    supabase.postgrest.auth(session)
+    error = supabase.auth.sign_out()
+    if not error:
+       return "works!"
+    else:
+        return None
