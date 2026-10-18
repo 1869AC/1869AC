@@ -3,12 +3,24 @@ import songs_path
 #import last_played.json 
 from fastapi import FastAPI, HTTPException #creates server + allows to return errers 404 
 from fastapi.responses import FileResponse #sends files to browsert
+from fastapi.middleware.cors import CORSMiddleware
 
 
 app = FastAPI() #uses the import to make a python server w Uvicorn
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins = ["http://localhost:5174"], 
+    allow_methods = ["GET"], 
 
+
+)
 #MAKE DICTIONARY T-T why did we not do this from the startt 
-
+allowed_song_types = {
+    ".mp3": "audio/mpeg",
+    ".ogg": "audio/ogg",
+    ".wav": "audio/wav",
+    ".flac": "audio/flac",
+}
 playlists = {
     name:songs
     #gets playlist name
@@ -19,17 +31,28 @@ playlists = {
 
 @app.get("/GIMMETHOSESONGS/{index}")
 def give_playlists(index): 
+    playlist_names = list(playlists.keys())
+    if index <0 or index >= len(playlist_names):
+        raise HTTPException(status_code= 6767, detail = "ERROR GETTING SONG!")
     return{
-        playlists[index]
+        "name": playlist_names[index],
+        "songs": playlists[playlist_names[index]]
     }
 
 @app.get("/PLAYSONG/{playlist_index}/{song_index}")
 def play(playlist_index,song_index):
-    playlist = playlists[playlist_index]
-    if playlist is None:
+    playlist_names = list(playlists.keys())
+    if playlist_index <0 or playlist_index >= len(playlist_names):
         raise HTTPException(status_code= 6767, detail = "ERROR PLAYLIST!")
-    if song_index <0 or song_index >= len(playlist):
+    playlist_name = playlist_names[playlist_index]
+    playlist_songs = playlists[playlist_name]
+    if song_index <0 or song_index >= len(playlist_songs):
         raise HTTPException(status_code= 6767, detail = "ERROR SONG!")
-    songs = playlist[song_index]
-    return songs
+    songs = playlist_songs[song_index]
+
+    ##FILE EXTENSION
+    my_type = allowed_song_types.get(songs.suffix.lower(), "application/octet-stream")    
+    if not songs.is_file() or my_type is None:
+        raise HTTPException(status_code= 6767, detail = "Invalid Song. Can only be MP3, OGG, WAV or FLAC!")
+    return FileResponse(songs, type = my_type)
 
