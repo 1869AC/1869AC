@@ -1,0 +1,7 @@
+{
+    "self.volume_level": 10,
+    "playlist": "meow",
+    "index_of_song": 0,
+    "shuffle": false,
+    "auto": "auto"
+}
