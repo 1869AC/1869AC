@@ -1,7 +1,7 @@
 {
-    "self.volume_level": 10,
+    "self.volume_level": 0,
     "playlist": "k",
-    "index_of_song": 4,
+    "index_of_song": 2,
     "shuffle": false,
     "auto": "auto"
 }

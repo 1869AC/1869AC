@@ -34,11 +34,9 @@ LIST_BOX_WIDTH = 80
 DIM = "\033[2m"
 REV = "\033[7m"
 RESET = "\033[0m"
-
-current_song = new_playlist[0]
-
-def get_cur_song():
-    return current_song
+##GLOBALS
+cur_song_index = 0 
+cur_playlist = 0 
 
 def truncate(text, max_width):
     return text if len(text) <= max_width else text[:max_width - 3] + "..."
@@ -561,8 +559,10 @@ class UiWidgets:
         time.sleep(1)
         self.hard_clear_screen()
         self.enable_cbreak()
-
     def render(self, song_time, current_song_index, playlist):
+        cur_song_index = current_song_index
+        cur_playlist = playlist
+
         self.hard_clear_screen()
 
         if self.help_menu_toggle == True:
@@ -592,7 +592,6 @@ class UiWidgets:
             for line in lines:
                 print(f"\x1b[2K\r{line}")
             print(f"\x1b[{len(lines)}A", end="", flush=True)
-
     def wait_for_song_length(self, new_player):
         waited = 0
         while new_player.get_length() <= 0:
@@ -1249,3 +1248,5 @@ class UiWidgets:
         self.reset(song_name)
 
         return new_player, new_song_time, index
+def get_cur_song():
+    return [cur_song_index,cur_playlist]

@@ -9,7 +9,6 @@ const mode =  localStorage.getItem("mode") || "guest"
 function Playlists({ifSlice, playlists}){//obj
     const new_array = ifSlice? playlists.slice(0,8):playlists 
     {/* PLS ADD PLAYLIST EXTRACTION LOGIC!*/}
-    console.log(new_array)
     if(new_array.length === 0){
         return (<p> No playlists! Go and make one!</p>)
     }
@@ -33,7 +32,8 @@ export default function Dashboard(){
     const [playlists, setPlaylists] = useState([])
     const Navigate = useNavigate()
     const [loading, setLoading] = useState(true);
-    const [selected, setSelected] = useState(null)
+    const [selected, setSelected] = useState(null);
+    const [song, setSong] = useState(null);
     useEffect(() => { 
         //GUEST
         async function guestFetcher(){
@@ -47,7 +47,6 @@ export default function Dashboard(){
                 //ERROR
                 const data = await response.json()
                 if (!Array.isArray(data)){
-                    console.log(data)
                     //ERROR HOW IS THIS HAPPENING?
                     throw new Error("yeah this ones never happening?")
                 }
@@ -93,6 +92,7 @@ export default function Dashboard(){
         //CALL MY BS
         fetcher()
     }, []);
+    const [text, setText] = useState(true)
     return(
         <div className = "container">
             <div className = "menu_row">
@@ -106,12 +106,50 @@ export default function Dashboard(){
                 />
            </div>
            <div>
-            <button onClick = {playsong()}> Play songs online instead! </button>
+            <button onClick = {playsong}> {text? "Play Songs" : "Turn Off Songs"} </button>
+            <p> (By default it tries to play what you were last listening on the terminal! Since that's not always possible sometimes it plays nothing!)</p>
+            <audio
+                key = {song}
+                controls //turns on
+                src = {
+                    song != null? `${MREOW}/PLAYSONG/${song.playlist_index}/${song.song_index}` : undefined
+                }
+            />
            </div>
         </div>
     );
-    function playsong(){
-        
+    async function playsong(){
+        console.log("CLCK")
+            if(text == true){
+                console.log("OFFLINE")
+                //online make it offline
+                setText(false)
+                setSong(null)
+                return
+            }
+            try{
+                console.log("ONLINE")
+                setText(true)
+                console.log("HI?")
+                const response = await fetch(`${MREOW}/NAMEOFSTUPIDSONG/`);
+                if (!response.ok){
+                    throw new Error(`HTTPS ERROR:${response.status}`)
+                    console.log("BAD HTTPS")
+                }
+                const curSong = await response.json()
+                console.log(curSong)
+                    setSong({
+                        playlist_index: curSong[1],
+                        song_index: curSong[0]
+                    });
+                    console.log("SET SONG")
+                }catch(e){
+                    console.log("ERROR")
+                    console.log(e)
+                    toast.error(e.message)
+                }
+            }
+
     }
     function toggle(){ 
         setAll(prev=> !prev)
@@ -119,4 +157,3 @@ export default function Dashboard(){
     function newplaylist(){ 
         //NEW PLAYLIST ADDING 
     }
-}

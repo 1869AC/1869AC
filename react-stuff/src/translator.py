@@ -9,7 +9,6 @@ from fastapi.responses import FileResponse #sends files to browsert
 from fastapi.middleware.cors import CORSMiddleware
 from widgets import get_cur_song
 
-cursong = get_cur_song()
 
 app = FastAPI() #uses the import to make a python server w Uvicorn
 app.add_middleware(
@@ -45,7 +44,7 @@ def give_playlists(index:int):
     return playlist_names
 
 @app.get("/PLAYSONG/{playlist_index}/{song_index}")
-def play(playlist_index,song_index):
+def play(playlist_index:int,song_index:int):
     playlist_names = list(playlists.keys())
     if playlist_index <0 or playlist_index >= len(playlist_names):
         raise HTTPException(status_code= 6767, detail = "ERROR PLAYLIST!")
@@ -53,11 +52,13 @@ def play(playlist_index,song_index):
     playlist_songs = playlists[playlist_name]
     if song_index <0 or song_index >= len(playlist_songs):
         raise HTTPException(status_code= 6767, detail = "ERROR SONG!")
-    songs = playlist_songs[song_index]
+    songs = Path(playlist_songs[song_index]) #str to path
 
     ##FILE EXTENSION
-    my_type = allowed_song_types.get(songs.suffix.lower(), "application/octet-stream")    
-    if not songs.is_file() or my_type is None:
+    my_type = allowed_song_types.get(songs.suffix.lower())    
+    if my_type is None or not songs.is_file() :
         raise HTTPException(status_code= 6767, detail = "Invalid Song. Can only be MP3, OGG, WAV or FLAC!")
-    return FileResponse(songs, type = my_type)
-
+    return FileResponse(path = str(songs), media_type = my_type)
+@app.get("/NAMEOFSTUPIDSONG/")
+def song_getter():
+   return get_cur_song()
