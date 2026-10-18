@@ -1,3 +1,6 @@
+import sys
+from pathlib import Path 
+sys.path.insert(0,str(Path(__file__).resolve().parent.parent.parent)) #TO SEE THE PYTHON BACK END MAIN STUFF TOO :D
 import songs_path
 #comes in a fat chunk
 #import last_played.json 
@@ -9,10 +12,9 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI() #uses the import to make a python server w Uvicorn
 app.add_middleware(
     CORSMiddleware,
-    allow_origins = ["http://localhost:5174"], 
-    allow_methods = ["GET"], 
-
-
+    allow_origins = ["http://localhost:8000","http://localhost:5173"], 
+    allow_methods = ["*"], 
+    allow_headers = ["*"], 
 )
 #MAKE DICTIONARY T-T why did we not do this from the startt 
 allowed_song_types = {
@@ -30,13 +32,13 @@ playlists = {
 
 
 @app.get("/GIMMETHOSESONGS/{index}")
-def give_playlists(index): 
+def give_playlists(index:int): 
     playlist_names = list(playlists.keys())
-    if index <0 or index >= len(playlist_names):
+    if int(index) <0 or int(index) >= len(playlist_names):
         raise HTTPException(status_code= 6767, detail = "ERROR GETTING SONG!")
     return{
-        "name": playlist_names[index],
-        "songs": playlists[playlist_names[index]]
+        "name": playlist_names[int(index)],
+        "songs": playlists[playlist_names[int(index)]]
     }
 
 @app.get("/PLAYSONG/{playlist_index}/{song_index}")

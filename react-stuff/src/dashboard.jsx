@@ -4,7 +4,7 @@ import plus from "./assets/cover.PNG"
 import {supabase} from './main.jsx'
 import { useNavigate} from 'react-router-dom'
 import toast from 'react-hot-toast';
-const MREOW = import.meta.env.VITE_API_URL
+const MREOW = (import.meta.env.VITE_API_URL || "http://localhost:8000").replace(/\/$/, "")
 const mode =  localStorage.getItem("mode") || "guest"
 
 const playlist_array = [
@@ -22,7 +22,7 @@ const playlist_array = [
     ["beautiful", "path4", "./assets/cover.PNG"]
 ];
 
-function Playlists({ifSlice}){//obj
+function Playlists({ifSlice, playlists}){//obj
     const new_array = ifSlice? playlists.slice(0,8):playlists 
     {/* PLS ADD PLAYLIST EXTRACTION LOGIC!*/}
     if(new_array.length === 0){
@@ -54,46 +54,55 @@ export default function Dashboard(){
         async function guestFetcher(){
             try{
                 const response = await fetch(
-                    "{MREOW}/GIMMETHOSESONGS/0"
+                    `${MREOW}/GIMMETHOSESONGS/0`
                 );
+                toast.success("noot 1 ")
                 if (!response.ok){
                     throw new Error("COULD NOT LOAD PLAYLIST UNO")
                 }
+                toast.success("noot 2 ")
+                //ERROR
                 const data = await response.json()
+                toast.success("noot 3?? ")
                 if (!Array.isArray(data)){
+                    //ERROR HOW IS THIS HAPPENING?
                     throw new Error("yeah this ones never happening?")
                 }
-                setPlaylists(first);
+                toast.success("noot 4?? ")
+                setPlaylists(data);
             }catch(e){
-                toast.error(e.message)
+                toast.error("FAT" + e.message) //ERROR HERE DOC TYPE THINGY.
             }
         }
         // AUTH
         async function fetcher() { 
             try{
                 const {response, error} = await supabase.auth.getUser()
+                if (error){
+                    toast.error("FAT" + error.message)
+                    return;
+                }
                 if (!response.data.user || !response.data ){
                     // well dang how did you get here??
                     Navigate('/signup')
                     toast.error("HOW DID YOU GET HERE?!")
                     return
-                }   
+                }
             }catch(e){
                 toast.error(e)
             }
             const {response2, error2} = await supabase.from("users").select("songs").eq("id", user.id).maybeSingle(); 
             if(error){
-                toast.error(error.message)
+                toast.error("FAT" + error.message)
                 return;
             }
-            else if (response2.data && response2.data.songs){
-                const formattedSongs = response2.data.map(song => [
-                    song.name || "Untitled",
-                    song.dir || "missing path",
-                ])
+            if (response2.data && response2.data.songs){
                 setPlaylists(formattedSongs)
-        }}
-        if(get_mode() == "guest"){
+            }
+        }
+
+        //CALL MY BS
+        if(mode == "guest"){
             guestFetcher()
         }
         else{
