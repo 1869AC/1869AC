@@ -5,6 +5,7 @@ import {supabase} from './main.jsx'
 import { useNavigate} from 'react-router-dom'
 import toast from 'react-hot-toast';
 const MREOW = import.meta.env.VITE_API_URL
+const mode =  localStorage.getItem("mode") || "guest"
 
 const playlist_array = [
     ["song", "path", "./assets/cover.PNG"],
@@ -22,17 +23,18 @@ const playlist_array = [
 ];
 
 function Playlists({ifSlice}){//obj
-    const new_array = ifSlice? playlist_array.slice(0,8):playlist_array 
+    const new_array = ifSlice? playlists.slice(0,8):playlists 
     {/* PLS ADD PLAYLIST EXTRACTION LOGIC!*/}
-    pythongetterofsongs()
+    if(new_array.length === 0){
+        return (<p> No playlists! Go and make one!</p>)
+    }
         return(
         <>
-            {new_array.map((song_name, index)=> {
+            {new_array.map((playlist, index)=> {
             return(
                 <div key = {index}>
-                    <img className = "small" src = {url(song_name[2])}/>
-                    <p>{song_name[0]}</p>
-                    </div>
+                    <p>{playlist.name}</p>
+                </div>
             );
             })}
         </>
@@ -45,19 +47,23 @@ export default function Dashboard(){
     const [all, setAll] = useState(false)
     const [playlists, setPlaylists] = useState([])
     const Navigate = useNavigate()
-    useEffect(() => {
+    const [loading, setLoading] = useState(true);
+    const [selected, setSelected] = useState(null)
+    useEffect(() => { 
         //GUEST
         async function guestFetcher(){
             try{
-                const response = await Promise(
-                    [fetch("/GIMMETHOSESONGS/0")]
+                const response = await fetch(
+                    "{MREOW}/GIMMETHOSESONGS/0"
                 );
-                const data = response[0]
-                if (!data.ok){
+                if (!response.ok){
                     throw new Error("COULD NOT LOAD PLAYLIST UNO")
                 }
-                const first = await data.json()
-                setPlaylists(first)
+                const data = await response.json()
+                if (!Array.isArray(data)){
+                    throw new Error("yeah this ones never happening?")
+                }
+                setPlaylists(first);
             }catch(e){
                 toast.error(e.message)
             }
@@ -66,7 +72,7 @@ export default function Dashboard(){
         async function fetcher() { 
             try{
                 const {response, error} = await supabase.auth.getUser()
-                if (!response.user.data || !response.user ){
+                if (!response.data.user || !response.data ){
                     // well dang how did you get here??
                     Navigate('/signup')
                     toast.error("HOW DID YOU GET HERE?!")
@@ -77,18 +83,22 @@ export default function Dashboard(){
             }
             const {response2, error2} = await supabase.from("users").select("songs").eq("id", user.id).maybeSingle(); 
             if(error){
-                toast.error(error)
+                toast.error(error.message)
+                return;
             }
             else if (response2.data && response2.data.songs){
                 const formattedSongs = response2.data.map(song => [
                     song.name || "Untitled",
                     song.dir || "missing path",
-                    plus
                 ])
                 setPlaylists(formattedSongs)
         }}
-        fetcher()
-        guestFetcher()
+        if(get_mode() == "guest"){
+            guestFetcher()
+        }
+        else{
+            fetcher()
+        }
     }, []);
     return(
         <div className = "container">
@@ -98,7 +108,10 @@ export default function Dashboard(){
                 <button style ={{color: "white", backgroundColor: "MediumSeaGreen", transform: "scale(1.5)", marginBottom: "3em"}} onClick = {toggle}> {!all? "Show all": "Condense"}</button>
             </div>
            <div className = "playlists">
-                <Playlists ifSlice = {!all}/>
+                <Playlists 
+                ifSlice = {!all}
+                playlists = {playlists}
+                />
            </div>
            <div className = "custom playlists">
                 {/* AUTO GENERATED MINI PLAYLISTS WITH SIMILAR VIBES */}

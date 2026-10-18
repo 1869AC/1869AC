@@ -15,6 +15,9 @@ import re
 import importlib
 from pathlib import Path
 
+mode = "guest"
+def get_mode():
+    return mode
 if os.name == "nt":
     os.system("")
 if os.name != "nt" or os.name != "win32":
