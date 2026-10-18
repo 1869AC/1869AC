@@ -397,3 +397,73 @@ button:hover {
   width: 100%; 
   height: auto; 
 }
+/* about page team cards */
+.team {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+  width: min(600px, 90%);
+  margin: 0 auto;
+}
+
+.member {
+  border: 2px solid #3d3229;
+  border-radius: 4px;
+  padding: 28px 16px;
+  background: rgba(24, 21, 19, 0.8);
+  color: #d4b28c;
+  font-family: terminal;
+  font-size: 26px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.member:hover {
+  border-color: #d4b28c;
+  box-shadow: 0 0 18px rgba(212, 178, 140, 0.35);
+}
+
+@media (max-width: 768px) {
+  .team {
+    grid-template-columns: 1fr;
+  }
+}
+.member {
+  border: 2px solid #3d3229;
+  border-radius: 4px;
+  padding: 28px 16px;
+  background: rgba(24, 21, 19, 0.8);
+  color: #d4b28c;
+  font-family: terminal;
+  font-size: 26px;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  text-decoration: none;
+  display: block;
+  text-transform: uppercase;
+}
+/* install section */
+.install {
+  gap: 10px;
+  padding: 60px 20px;
+  box-sizing: border-box;
+}
+
+.code {
+  background: rgba(24, 21, 19, 0.9);
+  border: 2px solid #3d3229;
+  border-radius: 4px;
+  color: #d4b28c;
+  font-family: monospace;
+  font-size: 18px;
+  text-align: left;
+  padding: 16px 24px;
+  margin: 8px 0 24px;
+  max-width: 90%;
+  overflow-x: auto;
+}
+
+@media (max-width: 768px) {
+  .code {
+    font-size: 14px;
+    padding: 12px 16px;
+  }
+}

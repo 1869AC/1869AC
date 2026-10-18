@@ -8,6 +8,7 @@ import Login from './login.jsx'
 import Protected from './protected.jsx'
 import Dashboard from './dashboard.jsx'
 import SignUp from './signup.jsx'
+import About from './about.jsx'
 
 //MY BELOVED TOASTER
 import {Toaster} from 'react-hot-toast';
@@ -32,6 +33,7 @@ function Topset(){
         <Route path = "/features" element = {<Features/>}/>
         <Route path = "/login" element = {<Login/>}/>
         <Route path = "/signup" element = {<SignUp/>}/>
+        <Route path = "/about" element = {<About/>}/><Route path = "/about" element = {<About/>}/>
         <Route path = "/dashboard" element = {
           <Protected>
             <Dashboard /> 
