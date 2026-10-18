@@ -11,7 +11,6 @@ def reload_songs_path():
     importlib.reload(songs_path)
 
 def get_playlists():
-
     playlists_list = []
 
     for variable_name in dir(songs_path):

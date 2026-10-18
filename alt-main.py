@@ -1,11 +1,9 @@
-##THIS IS AN ALTERNATIVE MAIN I AM WORKING ON AND WILL FINISH
-##IN LATER WEEKS THAT HAS AUTH IMPLEMENTED 
-
 import json
 import os
 import sys
 import json
 import time
+import pprint
 try:
     import vlc
 except (ImportError, OSError):
@@ -29,6 +27,12 @@ if os.name != "nt" or os.name != "win32":
 name2 = "guest"
 username = "guest"
 jsdoit = False
+allowed_song_types = {
+    ".mp3": "audio/mpeg",
+    ".ogg": "audio/ogg",
+    ".wav": "audio/wav",
+    ".flac": "audio/flac",
+}
 ##AUTH IMPORTS
 from supabaseclient import supabase
 from auth import account
@@ -95,7 +99,6 @@ print("( a/ g ): ")
 choice = input("").strip()
 if choice.lower() == 'a':
     name2 = account()
-    print(name2)
     if name2 != "guest":
         #user exists need to sync to cloud
         try:
@@ -105,13 +108,16 @@ if choice.lower() == 'a':
             else:
                 ##SONG JSON THERE
                 playlists_list = response.data["songs"] or []
+                for playlist in playlists_list: 
+                    song = playlist["name"]
+                    directory = playlist["dir"]
+                    append_folder_to_songs_path(directory, song)
         except Exception as e:
             print(e)
     elif choice.lower() == 'g':  
         print("continuing as a guest...") 
     else:
         print("invalid. defaulting to guest mode.") 
-    print("+====================================================+")
 
 if not get_playlists():
     while True:
