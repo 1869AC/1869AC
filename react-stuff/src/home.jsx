@@ -104,6 +104,30 @@ export default function Home() {
 
       {/* project info, requirements, and setup guide */}
       <div ref={nextSection}>
+                {/* install guide for the terminal app */}
+        <motion.div
+          className="biggie install"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: false, amount: 0.2 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h1> Install the player! </h1>
+
+          <h2> Mac / Linux </h2>
+          <pre className="code">{`brew install --cask vlc
+          brew trust mrpeng4/tap
+          brew tap mrpeng4/tap
+          brew install ac1869
+          1869ac`}</pre>
+
+          <h2> Windows </h2>
+          <p> 1. Install Python 3.12 or newer (tick "Add Python to PATH") </p>
+          <p> 2. Install the 64-bit VLC media player from videolan.org </p>
+          <p> 3. Open a terminal in the project folder and run: </p>
+          <pre className="code">{`pip install -r requirements.txt
+          python main.py`}</pre>
+        </motion.div>
         <motion.div
           className="biggie"
           initial={{ opacity: 0, y: 20 }}
