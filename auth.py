@@ -4,8 +4,9 @@ from supabaseclient import supabase
 supabaseUsernameRegex = re.compile(
     r"^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*$"
 )
-
-
+name2 ="guest"
+def get_uid():
+    return name2
 def cool_title():
     print("                                                            (   ) ") 
     print("  .---.    .--.      .--.      .--.    ___  ___   ___ .-.    | |_  ")
@@ -21,6 +22,7 @@ def cool_title():
 def account():   
     cool_title()                                                                                                             
     while True:
+        global name2
         print("login, signup, or continue as a guest?")
         print("(l/s/g): ")
         yor = input("").strip()
@@ -39,7 +41,8 @@ def account():
                         "password": password,}
                     )
                     print("\033[1;35m Welcome back... \033[0m" + username)
-                    return response.user.id
+                    name2 = response.user.id
+                    return name2
                 except Exception as e:
                     print("Login failed:", e)
         elif yor.lower() == "s":
@@ -77,12 +80,14 @@ def account():
                     }
                     )
                     print("\033[1;35m Account created! Logging you in... \033[0m")
-                    return response.user.id
+                    name2 = response.user.id
+                    return name2
                 except Exception as e:
                     print("\033[1;31m Signup error: \033[0m", e)
 
         elif yor.lower() == "g":
             print("\033[1;35m Continuing as a guest! \033[0m")
-            return "guest"
+            name2 ="guest"
+            return name2
         else:
             print("\033[1;35m Invalid option. \033[0m")

@@ -4,7 +4,7 @@ import os
 import vlc
 import datetime
 from supabaseclient import supabase
-from altmain import get_uid
+from auth import get_uid
 from pygame import mixer
 import random
 try:
@@ -556,7 +556,28 @@ class UiWidgets:
         if user_directory and user_playlist_name:
             ##ADD TO SUPABSE TOO!
             self.playlist_added = append_folder_to_songs_path(user_directory, user_playlist_name)
-            response = supabase.table("users").select("songs").eq("id", get_uid()).upsert().execute()
+            name = get_uid()
+            if name != "guest":
+                try:
+                    #PREVENT DUPLICATES
+                    response = supabase.table("users").select("songs").eq("id", name).maybe_single().execute()
+                    playlists = response.data.get("songs") or [] if response.data else []
+                    for playlist in playlists:
+                        if playlist.get("name") == user_playlist_name:
+                            break
+                        else:
+                            playlists.append({
+                                "name": user_playlist_name, 
+                                "dir": user_directory
+                            })  
+                    response2 = supabase.table("users").upsert({
+                        "id":name, 
+                        "songs": playlists
+                    }).execute()
+                except Exception as e:
+                    print("Sorry something went wrong :"+e) 
+
+    
         else:
             print("Directory not found returning back...")
 

@@ -33,8 +33,7 @@ allowed_song_types = {
     ".wav": "audio/wav",
     ".flac": "audio/flac",
 }
-def get_uid():
-    return name2
+
 ##AUTH IMPORTS
 from supabaseclient import supabase
 from auth import account
@@ -123,10 +122,10 @@ if choice.lower() == 'a':
         print("invalid. defaulting to guest mode.") 
 
 if not get_playlists():
+    playlists_list = get_playlists()
     while True:
             print("\033[H\033[2J", end="", flush=True)
             print("+=======================================================================+")
-
             print(
                 "It seems like there are no songs added. Please paste a folder path down below where all your music is located:")
             user_directory = input("Folder path: ").strip()
@@ -186,7 +185,6 @@ while True:
 
         saved_playlist = getattr(songs_path, str(user_saves.get("playlist", "")), [])
         saved_index = user_saves.get("index_of_song", -1)
-
         if user_saves and saved_playlist and 0 <= saved_index < len(saved_playlist):
 
             name_for_Playlist = user_saves["playlist"]
