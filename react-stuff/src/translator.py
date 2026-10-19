@@ -14,7 +14,7 @@ from widgets import get_cur_song
 app = FastAPI() #uses the import to make a python server w Uvicorn
 app.add_middleware(
     CORSMiddleware,
-    allow_origins = ["http://localhost:8000","http://localhost:5174"], 
+    allow_origins = ["http://localhost:8000","http://localhost:5174", "https://1869ac.github.io","https://thepillu.site/", ], 
     allow_methods = ["*"], 
     allow_headers = ["*"], 
 )

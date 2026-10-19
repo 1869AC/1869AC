@@ -1,2 +1,4 @@
 pygame-ce
 python-vlc
+fastapi
+uvicorn
