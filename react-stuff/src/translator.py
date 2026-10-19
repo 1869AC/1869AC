@@ -58,11 +58,11 @@ def play(playlist_index:int,song_index:int):
 
 
     if playlist_index <0 or playlist_index >= len(playlist_names):
-        raise HTTPException(status_code= 101, detail = "ERROR PLAYLIST!")
+        raise HTTPException(status_code= 401, detail = "ERROR PLAYLIST!")
     playlist_name = playlist_names[playlist_index]
     playlist_songs = playlists[playlist_name]
     if song_index <0 or song_index >= len(playlist_songs):
-        raise HTTPException(status_code= 101, detail = "ERROR SONG!")
+        raise HTTPException(status_code= 401, detail = "ERROR SONG!")
     songs = Path(playlist_songs[song_index]) #str to path
 
     ##FILE EXTENSION
@@ -124,6 +124,9 @@ def sendsession(session):
                 print("VALID")
                 folder = Path(playlist["dir"])
                 print("WHAT?")
+                print("PLAYLIST DATA:", repr(playlist))
+                print("DIRECTORY:", str(folder))
+                print("DIRECTORY EXISTS:", folder.is_dir())
                 if not folder.is_dir(): 
                     print("BAD PATH")
                     return
