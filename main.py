@@ -3,6 +3,7 @@ import os
 import sys
 import json
 import time
+import pprint
 try:
     import vlc
 except (ImportError, OSError):
@@ -15,9 +16,6 @@ import re
 import importlib
 from pathlib import Path
 
-mode = "guest"
-def get_mode():
-    return mode
 if os.name == "nt":
     os.system("")
 if os.name != "nt" or os.name != "win32":
@@ -25,6 +23,21 @@ if os.name != "nt" or os.name != "win32":
     devnull = os.open(os.devnull, os.O_WRONLY)
     os.dup2(devnull, stderr_fd)
     os.close(devnull)
+##SUPABASE STUFF
+name2 = "guest"
+username = "guest"
+jsdoit = False
+allowed_song_types = {
+    ".mp3": "audio/mpeg",
+    ".ogg": "audio/ogg",
+    ".wav": "audio/wav",
+    ".flac": "audio/flac",
+}
+
+##AUTH IMPORTS
+from supabaseclient import supabase
+from auth import account
+
 def sync_playlists_with_folders():
     valid_exts = {'.mp3', '.wav', '.flac', '.m4a', '.ogg'}
 
@@ -79,12 +92,40 @@ def sync_playlists_with_folders():
         importlib.reload(songs_path)
 
         time.sleep(2)
+#FIRST ASK LOGIN OR LOCAL!
+print("+====================================================+")
+print("Hello! Welcome to 1869AC - the terminal music player!")
+print("Continue as a guest or authenticate to save your playlists to the cloud!")
+print("( a/ g ): ")
+choice = input("").strip()
+if choice.lower() == 'a':
+    name2 = account()
+    if name2 != "guest":
+        #user exists need to sync to cloud
+        try:
+            response = supabase.table("users").select("songs").eq("id", name2).maybe_single().execute()
+            if response and response.data and "songs" in response.data:
+                playlists_list = response.data["songs"] or []
+                current_playlists = get_playlists()
+                for playlist in playlists_list: 
+                    song = playlist["name"]
+                    directory = playlist["dir"]
+                    if song in current_playlists:
+                        continue
+                    append_folder_to_songs_path(directory, song, shutup = True)
+                importlib.reload(songs_path)
+        except Exception as e:
+            print(e)
+    elif choice.lower() == 'g':  
+        print("continuing as a guest...") 
+    else:
+        print("invalid. defaulting to guest mode.") 
 
 if not get_playlists():
+    playlists_list = get_playlists()
     while True:
             print("\033[H\033[2J", end="", flush=True)
             print("+=======================================================================+")
-
             print(
                 "It seems like there are no songs added. Please paste a folder path down below where all your music is located:")
             user_directory = input("Folder path: ").strip()
@@ -100,6 +141,21 @@ if not get_playlists():
                 if answer:
                     print("Playlist saved! Loading...")
                     print("\033[H\033[2J", end="", flush=True)
+                    if name2 != "guest":
+                        oldSongs = []
+                        try: 
+                            response = supabase.table("users").select("songs").eq("id", name2).maybe_single().execute()
+                            if response is None or response.data is None:
+                                oldSongs = []
+                            else:
+                                oldSongs = response.data["songs"]
+                            response = supabase.table("users").upsert({
+                                "id": name2, 
+                                "songs": oldSongs + [{"dir": user_directory, "name":user_directory_name}]
+                            }).execute()
+                        except Exception as e: 
+                            print(e)
+                            
                     break
                 else:
                     print("Playlist not saved! Please try again")
@@ -107,19 +163,14 @@ if not get_playlists():
 
 sync_playlists_with_folders()
 
-playlists_list = []
-
-for variable_name in dir(songs_path):
-    if not variable_name.startswith("__"):
-        playlists_list.append(variable_name)
-
 while True:
     print("+==================================+")
     print("         SELECT A PLAYLIST          ")
     print("+==================================+")
 
-    for index in range(0, len(playlists_list)):
-        print(f"{index}. {playlists_list[index]}")
+    for index, name in enumerate(playlists_list):
+        tobeornottobe = name["name"] if isinstance(name,dict) else name
+        print(f"{index}. {tobeornottobe}")
     print("\nPress the \"z\" to play the last song you played")
     print("Please enter the number next to the playlist you want to play: ")
     playlist_index = input().strip().lower()
@@ -134,16 +185,16 @@ while True:
 
         saved_playlist = getattr(songs_path, str(user_saves.get("playlist", "")), [])
         saved_index = user_saves.get("index_of_song", -1)
-
         if user_saves and saved_playlist and 0 <= saved_index < len(saved_playlist):
 
             name_for_Playlist = user_saves["playlist"]
             playlist = getattr(songs_path, name_for_Playlist)
             current_song_index = user_saves["index_of_song"]
             current_song = playlist[current_song_index]
-            current_song_name = current_song.split("/")[-1]
-
-            player = vlc.MediaPlayer(current_song)
+            current_song_name = Path(current_song).name
+            #### added
+            current_song_path = str(current_song).replace("\\", "/")
+            player = vlc.MediaPlayer(current_song_path)
             player.play()
             volume = user_saves.get("self.volume_level", 10)
             player.audio_set_volume(volume * 10)
@@ -166,18 +217,25 @@ while True:
         if not playlist_index.isdigit() or int(playlist_index) >= len(playlists_list):
             print("Invalid selection.")
         else:
-            name_for_Playlist = playlists_list[int(playlist_index)]
+            #name_for_Playlist = playlists_list[int(playlist_index)]
+            #playlist = getattr(songs_path, name_for_Playlist)
+            rot = playlists_list[int(playlist_index)]
+            if isinstance(rot,dict):
+                name_for_Playlist = rot["name"]
+            else:
+                name_for_Playlist = rot
+            
             playlist = getattr(songs_path, name_for_Playlist)
-
             if not playlist:
                 print("That playlist is empty.")
                 continue
 
             current_song_index = 0
             current_song = playlist[current_song_index]
-            current_song_name = current_song.split("/")[-1]
+            current_song_name = Path(current_song).name
 
-            player = vlc.MediaPlayer(current_song)
+            current_song_path = str(current_song).replace("\\", "/")
+            player = vlc.MediaPlayer(current_song_path)
             player.play()
 
             try:

@@ -562,20 +562,24 @@ class UiWidgets:
                     #PREVENT DUPLICATES
                     response = supabase.table("users").select("songs").eq("id", name).maybe_single().execute()
                     playlists = response.data.get("songs") or [] if response.data else []
-                    for playlist in playlists:
-                        if playlist.get("name") == user_playlist_name:
-                            break
-                        else:
-                            playlists.append({
-                                "name": user_playlist_name, 
-                                "dir": user_directory
-                            })  
-                    response2 = supabase.table("users").upsert({
-                        "id":name, 
-                        "songs": playlists
-                    }).execute()
+                    if not any(
+                        playlist.get("name") == user_playlist_name 
+                        for playlist in playlists
+                    ):
+                        playlists.append({
+                            "name":user_playlist_name, 
+                            "path": user_directory
+                        })
+                        supabase.table("users").upsert({
+                            "id":name, 
+                            "songs": playlists
+                        }).execute()
+                    else:
+                        time.sleep(1)
+                        self.hard_clear_screen()
+                        self.enable_cbreak()
                 except Exception as e:
-                    print("Sorry something went wrong :"+e) 
+                    print(f"Sorry something went wrong : {e}") 
 
     
         else:
@@ -995,7 +999,7 @@ class UiWidgets:
             return
 
         if user_playlist_name in get_playlists():
-            print("this name is already taken please try something other")
+            print("this name is already taken please try something else!")
             time.sleep(1.5)
             self.hard_clear_screen()
             self.enable_cbreak()
@@ -1062,8 +1066,26 @@ class UiWidgets:
         self.reset(new_song_name)
 
         return new_player, new_song_time, new_playlist, 0
-
+    def delte_from_supabase(playlist_name):
+        name = get_uid()
+        if name != "guest": 
+            try:
+                response = supabase.table("users").select("songs").eq("id", name).maybe_single().execute()
+                if not response.data: 
+                    return 
+                playlists = response.data.get("songs") or []
+                ##NOW DELTE
+                new_playlist = [
+                    p for p in playlists
+                    if p.get("name") != playlist_name
+                ]
+                response1 = supabase.table("users").update({
+                    "songs":new_playlist
+                }).eq("id", name).execute()
+            except Exception as e: 
+                print(f"something went wrong ! {e}")
     def delete_playlist_prompt(self, player, playlist, song_time, current_index): # line 904
+        
         self.enable_cbreak()
         self.hard_clear_screen()
 
