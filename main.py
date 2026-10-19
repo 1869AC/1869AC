@@ -4,6 +4,10 @@ import sys
 import json
 import time
 import pprint
+
+import tempfile
+import atexit
+
 try:
     import vlc
 except (ImportError, OSError):
@@ -95,13 +99,12 @@ def sync_playlists_with_folders():
 #FIRST ASK LOGIN OR LOCAL!
 print("+====================================================+")
 print("Hello! Welcome to 1869AC - the terminal music player!")
-print("Continue as a guest or authenticate to save your playlists to the cloud!")
-print("( a/ g ): ")
-choice = input("").strip()
-if choice.lower() == 'a':
-    name2 = account()
-    if name2 != "guest":
-        #user exists need to sync to cloud
+name2 = account()
+importlib.invalidate_caches()
+importlib.reload(songs_path)
+playlists_list = get_playlists()
+if name2 != "guest":
+    #user exists need to sync to cloud
         try:
             response = supabase.table("users").select("songs").eq("id", name2).maybe_single().execute()
             if response and response.data and "songs" in response.data:
@@ -116,10 +119,6 @@ if choice.lower() == 'a':
                 importlib.reload(songs_path)
         except Exception as e:
             print(e)
-    elif choice.lower() == 'g':  
-        print("continuing as a guest...") 
-    else:
-        print("invalid. defaulting to guest mode.") 
 sync_playlists_with_folders()
 playlists_list = get_playlists()
 if not get_playlists():
