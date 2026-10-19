@@ -120,7 +120,8 @@ if choice.lower() == 'a':
         print("continuing as a guest...") 
     else:
         print("invalid. defaulting to guest mode.") 
-
+sync_playlists_with_folders()
+playlists_list = get_playlists()
 if not get_playlists():
     playlists_list = get_playlists()
     while True:
@@ -161,7 +162,6 @@ if not get_playlists():
                     print("Playlist not saved! Please try again")
                     time.sleep(1.5)
 
-sync_playlists_with_folders()
 
 while True:
     print("+==================================+")

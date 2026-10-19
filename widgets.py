@@ -39,7 +39,24 @@ RESET = "\033[0m"
 ##GLOBALS
 cur_song_index = 0 
 cur_playlist = 0 
-
+def delete_from_supabase(playlist_name):
+        name = get_uid()
+        if name != "guest": 
+            try:
+                response = supabase.table("users").select("songs").eq("id", name).maybe_single().execute()
+                if not response.data: 
+                    return 
+                playlists = response.data.get("songs") or []
+                ##NOW DELTE
+                new_playlist = [
+                    p for p in playlists
+                    if p.get("name") != playlist_name
+                ]
+                response1 = supabase.table("users").update({
+                    "songs":new_playlist
+                }).eq("id", name).execute()
+            except Exception as e: 
+                print(f"something went wrong ! {e}")
 def truncate(text, max_width):
     return text if len(text) <= max_width else text[:max_width - 3] + "..."
 
@@ -1066,24 +1083,6 @@ class UiWidgets:
         self.reset(new_song_name)
 
         return new_player, new_song_time, new_playlist, 0
-    def delte_from_supabase(playlist_name):
-        name = get_uid()
-        if name != "guest": 
-            try:
-                response = supabase.table("users").select("songs").eq("id", name).maybe_single().execute()
-                if not response.data: 
-                    return 
-                playlists = response.data.get("songs") or []
-                ##NOW DELTE
-                new_playlist = [
-                    p for p in playlists
-                    if p.get("name") != playlist_name
-                ]
-                response1 = supabase.table("users").update({
-                    "songs":new_playlist
-                }).eq("id", name).execute()
-            except Exception as e: 
-                print(f"something went wrong ! {e}")
     def delete_playlist_prompt(self, player, playlist, song_time, current_index): # line 904
         
         self.enable_cbreak()
@@ -1113,7 +1112,7 @@ class UiWidgets:
             self.hard_clear_screen()
             self.enable_cbreak()
             return player, song_time, playlist, current_index
-
+        delete_from_supabase(self.name_of_playlist)
         time.sleep(1)
         if delete_name == self.name_of_playlist:
             player.stop()

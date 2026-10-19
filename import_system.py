@@ -13,10 +13,9 @@ def reload_songs_path():
 def get_playlists():
     playlists_list = []
 
-    for variable_name in dir(songs_path):
-        if not variable_name.startswith("__"):
+    for variable_name, attribute in vars(songs_path).items():
+        if isinstance(attribute,list):
             playlists_list.append(variable_name)
-
     return playlists_list
 
 def is_valid_playlist_name(playlist_name):
