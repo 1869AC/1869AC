@@ -1,6 +1,12 @@
 # 1869AC
 ---
 A terminal music player with a bunch of cool features + an online site to play music as well!
+just download it and run it it is really simple and there is a help menu built inside the app so just go through it and test every single feature it is really simple
+yea and one thing
+you should have some already downloaded music any type of audio extension works 
+and put all the music in a folder
+then when you start the app it will ask for a path
+copy the FOLDER path where you stored you music and paste it in there na you will be set
 
 ### Skip ahead!
 
